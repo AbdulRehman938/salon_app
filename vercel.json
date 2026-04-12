@@ -1,6 +1,6 @@
 {
-  "installCommand": "git clone --depth 1 https://github.com/flutter/flutter.git .flutter-sdk",
-  "buildCommand": "./.flutter-sdk/bin/flutter config --no-analytics; ./.flutter-sdk/bin/flutter pub get; ./.flutter-sdk/bin/flutter build web --release --dart-define=BREVO_API_KEY=$BREVO_API_KEY --dart-define=BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL",
+  "installCommand": "git clone --depth 1 --branch 3.41.6 https://github.com/flutter/flutter.git .flutter-sdk",
+  "buildCommand": "./.flutter-sdk/bin/flutter --version; ./.flutter-sdk/bin/flutter config --no-analytics; ./.flutter-sdk/bin/flutter pub get; ./.flutter-sdk/bin/flutter build web --release --dart-define=BREVO_API_KEY=$BREVO_API_KEY --dart-define=BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL",
   "outputDirectory": "build/web",
   "rewrites": [
     {
