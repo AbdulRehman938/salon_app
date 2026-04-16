@@ -1,0 +1,714 @@
+{
+  "salons": [
+    {
+      "id": "PK-PJ-001",
+      "name": "Shafaq n Kami Salon",
+      "state": "Punjab",
+      "city": "Lahore",
+      "rating": 4.7,
+      "reviews_count": 6361,
+      "distance_km": 1.5,
+      "full_address": "MM Alam Road, Gulberg III, Lahore",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:00 PM" },
+      "short_description": "Luxury salon specializing in bridal and hair transformations.",
+      "services": [
+        { "service_name": "Haircut", "price": 5200, "duration_time": "60 min" },
+        { "service_name": "Balayage", "price": 18500, "duration_time": "180 min" },
+        { "service_name": "Hair Coloring", "price": 12000, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 21000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 6000, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 4000, "duration_time": "45 min" },
+        { "service_name": "Pedicure", "price": 4500, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2500, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 25000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 5500, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Ali Raza", "specialty": "Hair Styling" },
+        { "name": "Sara Khan", "specialty": "Bridal Makeup" },
+        { "name": "Hamza Javed", "specialty": "Hair Cutting" },
+        { "name": "Areeba Fatima", "specialty": "Skin Care" },
+        { "name": "Usman Tariq", "specialty": "Beard Styling" },
+        { "name": "Maham Ali", "specialty": "Hair Coloring" },
+        { "name": "Bilal Qureshi", "specialty": "Keratin Treatments" },
+        { "name": "Iqra Sheikh", "specialty": "Facials" },
+        { "name": "Zain Malik", "specialty": "Men Grooming" },
+        { "name": "Hira Noor", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Ali Raza", "specialty": "Hair Styling" },
+        { "name": "Sara Khan", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "15% off between 10:00 AM - 12:00 PM"
+    },
+
+    {
+      "id": "PK-PJ-002",
+      "name": "Urban Glow Studio",
+      "state": "Punjab",
+      "city": "Lahore",
+      "rating": 4.6,
+      "reviews_count": 2890,
+      "distance_km": 2.3,
+      "full_address": "DHA Phase 6, Lahore",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "11:00 AM - 09:00 PM" },
+      "short_description": "Modern beauty studio for hair and skin.",
+      "services": [
+        { "service_name": "Haircut", "price": 3200, "duration_time": "40 min" },
+        { "service_name": "Hair Dye", "price": 14000, "duration_time": "120 min" },
+        { "service_name": "Facial", "price": 5500, "duration_time": "60 min" },
+        { "service_name": "Threading", "price": 700, "duration_time": "15 min" },
+        { "service_name": "Waxing", "price": 2200, "duration_time": "30 min" },
+        { "service_name": "Hair Spa", "price": 4800, "duration_time": "60 min" },
+        { "service_name": "Cleanup", "price": 3000, "duration_time": "40 min" },
+        { "service_name": "Massage", "price": 6500, "duration_time": "60 min" },
+        { "service_name": "Bridal Makeup", "price": 22000, "duration_time": "180 min" },
+        { "service_name": "Protein Treatment", "price": 17000, "duration_time": "140 min" }
+      ],
+      "stylists": [
+        { "name": "Danish Ali", "specialty": "Hair Cutting" },
+        { "name": "Nimra Khan", "specialty": "Makeup Artist" },
+        { "name": "Faisal Raza", "specialty": "Hair Styling" },
+        { "name": "Komal Noor", "specialty": "Skin Care" },
+        { "name": "Imran Shah", "specialty": "Massage Therapy" },
+        { "name": "Ayesha Malik", "specialty": "Facials" },
+        { "name": "Bilal Tariq", "specialty": "Men Grooming" },
+        { "name": "Sana Iqbal", "specialty": "Hair Coloring" },
+        { "name": "Zubair Ahmed", "specialty": "Beard Styling" },
+        { "name": "Hania Zahid", "specialty": "Bridal Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Danish Ali", "specialty": "Hair Cutting" },
+        { "name": "Hania Zahid", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "12% off between 3:00 PM - 5:00 PM"
+    },
+    {
+      "id": "PK-KR-101",
+      "name": "Velvet Touch Salon",
+      "state": "Sindh",
+      "city": "Karachi",
+      "rating": 4.8,
+      "reviews_count": 4120,
+      "distance_km": 3.2,
+      "full_address": "Clifton Block 5, Karachi",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:30 AM - 09:30 PM" },
+      "short_description": "Premium salon offering modern hair and beauty solutions.",
+      "services": [
+        { "service_name": "Haircut", "price": 4000, "duration_time": "50 min" },
+        { "service_name": "Hair Highlights", "price": 16000, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 11000, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 20000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 6500, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3500, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 4200, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2300, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 26000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 5000, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Adeel Khan", "specialty": "Hair Styling" },
+        { "name": "Sadia Noor", "specialty": "Bridal Makeup" },
+        { "name": "Rizwan Ali", "specialty": "Hair Cutting" },
+        { "name": "Huma Sheikh", "specialty": "Skin Care" },
+        { "name": "Zeeshan Malik", "specialty": "Beard Styling" },
+        { "name": "Kiran Abbas", "specialty": "Hair Coloring" },
+        { "name": "Farhan Qureshi", "specialty": "Keratin Treatments" },
+        { "name": "Nida Iftikhar", "specialty": "Facials" },
+        { "name": "Saad Tariq", "specialty": "Men Grooming" },
+        { "name": "Iqra Riaz", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Adeel Khan", "specialty": "Hair Styling" },
+        { "name": "Sadia Noor", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "10% off between 2:00 PM - 4:00 PM"
+    },
+
+    {
+      "id": "PK-IS-102",
+      "name": "Glow Haven Studio",
+      "state": "Islamabad Capital Territory",
+      "city": "Islamabad",
+      "rating": 4.5,
+      "reviews_count": 2750,
+      "distance_km": 4.1,
+      "full_address": "F-7 Markaz, Islamabad",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "11:00 AM - 08:30 PM" },
+      "short_description": "Trendy beauty studio focused on skin and hair care.",
+      "services": [
+        { "service_name": "Haircut", "price": 3500, "duration_time": "45 min" },
+        { "service_name": "Hair Dye", "price": 13000, "duration_time": "120 min" },
+        { "service_name": "Facial", "price": 5800, "duration_time": "60 min" },
+        { "service_name": "Threading", "price": 600, "duration_time": "15 min" },
+        { "service_name": "Waxing", "price": 2100, "duration_time": "30 min" },
+        { "service_name": "Hair Spa", "price": 4700, "duration_time": "60 min" },
+        { "service_name": "Cleanup", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Massage", "price": 6200, "duration_time": "60 min" },
+        { "service_name": "Bridal Makeup", "price": 23000, "duration_time": "180 min" },
+        { "service_name": "Protein Treatment", "price": 16500, "duration_time": "140 min" }
+      ],
+      "stylists": [
+        { "name": "Usama Farooq", "specialty": "Hair Cutting" },
+        { "name": "Mehak Ali", "specialty": "Makeup Artist" },
+        { "name": "Talha Shah", "specialty": "Hair Styling" },
+        { "name": "Rabia Khan", "specialty": "Skin Care" },
+        { "name": "Arslan Haider", "specialty": "Massage Therapy" },
+        { "name": "Zara Malik", "specialty": "Facials" },
+        { "name": "Shahzaib Ahmed", "specialty": "Men Grooming" },
+        { "name": "Anum Riaz", "specialty": "Hair Coloring" },
+        { "name": "Waqas Iqbal", "specialty": "Beard Styling" },
+        { "name": "Hira Aslam", "specialty": "Bridal Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Usama Farooq", "specialty": "Hair Cutting" },
+        { "name": "Hira Aslam", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "18% off between 1:00 PM - 3:00 PM"
+    },
+
+    {
+      "id": "PK-FS-103",
+      "name": "Elite Style Lounge",
+      "state": "Punjab",
+      "city": "Faisalabad",
+      "rating": 4.4,
+      "reviews_count": 1980,
+      "distance_km": 2.7,
+      "full_address": "D Ground, Faisalabad",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:00 PM" },
+      "short_description": "Affordable luxury salon for everyday grooming.",
+      "services": [
+        { "service_name": "Haircut", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 14000, "duration_time": "140 min" },
+        { "service_name": "Hair Coloring", "price": 9500, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 18000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5000, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3000, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3500, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2000, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 20000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4200, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Junaid Ali", "specialty": "Hair Styling" },
+        { "name": "Sana Rauf", "specialty": "Bridal Makeup" },
+        { "name": "Bilal Hussain", "specialty": "Hair Cutting" },
+        { "name": "Ayesha Noor", "specialty": "Skin Care" },
+        { "name": "Fahad Malik", "specialty": "Beard Styling" },
+        { "name": "Khadija Tariq", "specialty": "Hair Coloring" },
+        { "name": "Zubair Khan", "specialty": "Keratin Treatments" },
+        { "name": "Madiha Iqbal", "specialty": "Facials" },
+        { "name": "Owais Ahmed", "specialty": "Men Grooming" },
+        { "name": "Laiba Shah", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Junaid Ali", "specialty": "Hair Styling" },
+        { "name": "Sana Rauf", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "20% off between 12:00 PM - 2:00 PM"
+    },
+
+    {
+      "id": "PK-MT-104",
+      "name": "Royal Glam Studio",
+      "state": "Punjab",
+      "city": "Multan",
+      "rating": 4.6,
+      "reviews_count": 3100,
+      "distance_km": 1.9,
+      "full_address": "Cantt Area, Multan",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 09:00 PM" },
+      "short_description": "Expert salon known for bridal and event makeovers.",
+      "services": [
+        { "service_name": "Haircut", "price": 3000, "duration_time": "45 min" },
+        { "service_name": "Hair Highlights", "price": 15000, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 10000, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 19000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5500, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3200, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3800, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2100, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 24000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4500, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Asad Raza", "specialty": "Hair Styling" },
+        { "name": "Noreen Fatima", "specialty": "Bridal Makeup" },
+        { "name": "Imran Qadir", "specialty": "Hair Cutting" },
+        { "name": "Sidra Amin", "specialty": "Skin Care" },
+        { "name": "Ali Shan", "specialty": "Beard Styling" },
+        { "name": "Bushra Ilyas", "specialty": "Hair Coloring" },
+        { "name": "Rashid Khan", "specialty": "Keratin Treatments" },
+        { "name": "Sumbal Riaz", "specialty": "Facials" },
+        { "name": "Kamran Malik", "specialty": "Men Grooming" },
+        { "name": "Hafsa Noor", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Asad Raza", "specialty": "Hair Styling" },
+        { "name": "Noreen Fatima", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "14% off between 4:00 PM - 6:00 PM"
+    },
+
+    {
+      "id": "PK-QT-105",
+      "name": "Blush Beauty Bar",
+      "state": "Balochistan",
+      "city": "Quetta",
+      "rating": 4.3,
+      "reviews_count": 1450,
+      "distance_km": 3.8,
+      "full_address": "Jinnah Road, Quetta",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:00 PM" },
+      "short_description": "Friendly neighborhood salon with quality services.",
+      "services": [
+        { "service_name": "Haircut", "price": 2500, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 12000, "duration_time": "130 min" },
+        { "service_name": "Hair Coloring", "price": 8500, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 4800, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3200, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1900, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 18000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4000, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Naveed Khan", "specialty": "Hair Styling" },
+        { "name": "Shazia Bibi", "specialty": "Bridal Makeup" },
+        { "name": "Yasir Ali", "specialty": "Hair Cutting" },
+        { "name": "Farzana Noor", "specialty": "Skin Care" },
+        { "name": "Tariq Hussain", "specialty": "Beard Styling" },
+        { "name": "Samina Rauf", "specialty": "Hair Coloring" },
+        { "name": "Akbar Shah", "specialty": "Keratin Treatments" },
+        { "name": "Lubna Iqbal", "specialty": "Facials" },
+        { "name": "Zahid Ahmed", "specialty": "Men Grooming" },
+        { "name": "Iqra Baloch", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Naveed Khan", "specialty": "Hair Styling" },
+        { "name": "Shazia Bibi", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "8% off between 1:00 PM - 3:00 PM"
+    },
+    {
+      "id": "PK-RWP-106",
+      "name": "Signature Looks Salon",
+      "state": "Punjab",
+      "city": "Rawalpindi",
+      "rating": 4.5,
+      "reviews_count": 2540,
+      "distance_km": 2.6,
+      "full_address": "Saddar, Rawalpindi",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 09:00 PM" },
+      "short_description": "Professional salon known for trendy hairstyles and grooming.",
+      "services": [
+        { "service_name": "Haircut", "price": 3000, "duration_time": "45 min" },
+        { "service_name": "Hair Highlights", "price": 15000, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 10000, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 18500, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5200, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3100, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3600, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2000, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 21000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4300, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Saif Ali", "specialty": "Hair Styling" },
+        { "name": "Mehwish Khan", "specialty": "Bridal Makeup" },
+        { "name": "Adnan Sheikh", "specialty": "Hair Cutting" },
+        { "name": "Zunaira Malik", "specialty": "Skin Care" },
+        { "name": "Furqan Ahmed", "specialty": "Beard Styling" },
+        { "name": "Rabia Tariq", "specialty": "Hair Coloring" },
+        { "name": "Kashif Raza", "specialty": "Keratin Treatments" },
+        { "name": "Sadia Iqbal", "specialty": "Facials" },
+        { "name": "Hamid Hussain", "specialty": "Men Grooming" },
+        { "name": "Amina Noor", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Saif Ali", "specialty": "Hair Styling" },
+        { "name": "Mehwish Khan", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "16% off between 12:00 PM - 2:00 PM"
+    },
+
+    {
+      "id": "PK-HYD-107",
+      "name": "Radiance Beauty Clinic",
+      "state": "Sindh",
+      "city": "Hyderabad",
+      "rating": 4.2,
+      "reviews_count": 1680,
+      "distance_km": 3.4,
+      "full_address": "Latifabad Unit 7, Hyderabad",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:30 AM - 08:30 PM" },
+      "short_description": "Affordable beauty services with expert care.",
+      "services": [
+        { "service_name": "Haircut", "price": 2600, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 12000, "duration_time": "130 min" },
+        { "service_name": "Hair Coloring", "price": 9000, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 4800, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3200, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1800, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 18000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 3900, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Noman Shaikh", "specialty": "Hair Styling" },
+        { "name": "Saba Noor", "specialty": "Bridal Makeup" },
+        { "name": "Adeel Hussain", "specialty": "Hair Cutting" },
+        { "name": "Farah Ali", "specialty": "Skin Care" },
+        { "name": "Javed Qureshi", "specialty": "Beard Styling" },
+        { "name": "Komal Sheikh", "specialty": "Hair Coloring" },
+        { "name": "Rizwan Memon", "specialty": "Keratin Treatments" },
+        { "name": "Hina Raza", "specialty": "Facials" },
+        { "name": "Asif Shah", "specialty": "Men Grooming" },
+        { "name": "Alina Khan", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Noman Shaikh", "specialty": "Hair Styling" },
+        { "name": "Saba Noor", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "10% off between 3:00 PM - 5:00 PM"
+    },
+
+    {
+      "id": "PK-SKT-108",
+      "name": "Glam Studio Pro",
+      "state": "Punjab",
+      "city": "Sialkot",
+      "rating": 4.6,
+      "reviews_count": 2210,
+      "distance_km": 1.8,
+      "full_address": "Cantt Area, Sialkot",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:30 PM" },
+      "short_description": "Stylish salon delivering premium grooming services.",
+      "services": [
+        { "service_name": "Haircut", "price": 2900, "duration_time": "45 min" },
+        { "service_name": "Hair Highlights", "price": 14500, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 9800, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 18000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5300, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3000, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3400, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2000, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 22000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4200, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Hassan Raza", "specialty": "Hair Styling" },
+        { "name": "Iqra Malik", "specialty": "Bridal Makeup" },
+        { "name": "Usman Tariq", "specialty": "Hair Cutting" },
+        { "name": "Nida Khan", "specialty": "Skin Care" },
+        { "name": "Faizan Ali", "specialty": "Beard Styling" },
+        { "name": "Saira Noor", "specialty": "Hair Coloring" },
+        { "name": "Bilal Ahmed", "specialty": "Keratin Treatments" },
+        { "name": "Maira Sheikh", "specialty": "Facials" },
+        { "name": "Zeeshan Riaz", "specialty": "Men Grooming" },
+        { "name": "Huma Tariq", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Hassan Raza", "specialty": "Hair Styling" },
+        { "name": "Iqra Malik", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "13% off between 11:00 AM - 1:00 PM"
+    },
+
+    {
+      "id": "PK-GJ-109",
+      "name": "Chic Cuts Salon",
+      "state": "Punjab",
+      "city": "Gujranwala",
+      "rating": 4.3,
+      "reviews_count": 1890,
+      "distance_km": 2.9,
+      "full_address": "Satellite Town, Gujranwala",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:00 PM" },
+      "short_description": "Reliable salon for everyday beauty and grooming needs.",
+      "services": [
+        { "service_name": "Haircut", "price": 2700, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 13500, "duration_time": "140 min" },
+        { "service_name": "Hair Coloring", "price": 9200, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17500, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5000, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2900, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3300, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1900, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 20000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4100, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Ahsan Javed", "specialty": "Hair Styling" },
+        { "name": "Sana Iqbal", "specialty": "Bridal Makeup" },
+        { "name": "Bilal Raza", "specialty": "Hair Cutting" },
+        { "name": "Komal Ashraf", "specialty": "Skin Care" },
+        { "name": "Waqas Malik", "specialty": "Beard Styling" },
+        { "name": "Hira Khan", "specialty": "Hair Coloring" },
+        { "name": "Imran Tariq", "specialty": "Keratin Treatments" },
+        { "name": "Rabia Noor", "specialty": "Facials" },
+        { "name": "Zubair Hussain", "specialty": "Men Grooming" },
+        { "name": "Maham Riaz", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Ahsan Javed", "specialty": "Hair Styling" },
+        { "name": "Sana Iqbal", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "11% off between 2:00 PM - 4:00 PM"
+    },
+
+    {
+      "id": "PK-PE-110",
+      "name": "Urban Style Hub",
+      "state": "Khyber Pakhtunkhwa",
+      "city": "Peshawar",
+      "rating": 4.4,
+      "reviews_count": 2075,
+      "distance_km": 3.1,
+      "full_address": "University Road, Peshawar",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:30 AM - 08:30 PM" },
+      "short_description": "Modern grooming hub with experienced stylists.",
+      "services": [
+        { "service_name": "Haircut", "price": 2800, "duration_time": "45 min" },
+        { "service_name": "Hair Highlights", "price": 14000, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 9600, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 17800, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5100, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3000, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3500, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2000, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 21000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4300, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Zubair Khan", "specialty": "Hair Styling" },
+        { "name": "Hina Gul", "specialty": "Bridal Makeup" },
+        { "name": "Sajid Afridi", "specialty": "Hair Cutting" },
+        { "name": "Nazia Bibi", "specialty": "Skin Care" },
+        { "name": "Rehan Ullah", "specialty": "Beard Styling" },
+        { "name": "Samina Gul", "specialty": "Hair Coloring" },
+        { "name": "Faisal Khan", "specialty": "Keratin Treatments" },
+        { "name": "Shazia Noor", "specialty": "Facials" },
+        { "name": "Imad Ali", "specialty": "Men Grooming" },
+        { "name": "Areeba Khan", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Zubair Khan", "specialty": "Hair Styling" },
+        { "name": "Hina Gul", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "15% off between 1:00 PM - 3:00 PM"
+    },
+    {
+      "id": "PK-BWP-111",
+      "name": "Golden Shears Salon",
+      "state": "Punjab",
+      "city": "Bahawalpur",
+      "rating": 4.4,
+      "reviews_count": 1735,
+      "distance_km": 2.1,
+      "full_address": "Circular Road, Bahawalpur",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:30 PM" },
+      "short_description": "Elegant salon offering modern grooming and styling.",
+      "services": [
+        { "service_name": "Haircut", "price": 2600, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 13500, "duration_time": "140 min" },
+        { "service_name": "Hair Coloring", "price": 9200, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17500, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 4900, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3300, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1900, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 19500, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4000, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Rizwan Akhtar", "specialty": "Hair Styling" },
+        { "name": "Saira Bibi", "specialty": "Bridal Makeup" },
+        { "name": "Usman Khalid", "specialty": "Hair Cutting" },
+        { "name": "Nadia Riaz", "specialty": "Skin Care" },
+        { "name": "Faisal Jutt", "specialty": "Beard Styling" },
+        { "name": "Komal Aslam", "specialty": "Hair Coloring" },
+        { "name": "Zahid Mehmood", "specialty": "Keratin Treatments" },
+        { "name": "Ayesha Yasin", "specialty": "Facials" },
+        { "name": "Imran Ashraf", "specialty": "Men Grooming" },
+        { "name": "Hafsa Tariq", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Rizwan Akhtar", "specialty": "Hair Styling" },
+        { "name": "Saira Bibi", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "12% off between 11:00 AM - 1:00 PM"
+    },
+
+    {
+      "id": "PK-SRG-112",
+      "name": "Polish & Shine Studio",
+      "state": "Punjab",
+      "city": "Sargodha",
+      "rating": 4.1,
+      "reviews_count": 1420,
+      "distance_km": 3.3,
+      "full_address": "University Road, Sargodha",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:30 AM - 08:00 PM" },
+      "short_description": "Budget-friendly salon with reliable services.",
+      "services": [
+        { "service_name": "Haircut", "price": 2400, "duration_time": "35 min" },
+        { "service_name": "Hair Highlights", "price": 12000, "duration_time": "130 min" },
+        { "service_name": "Hair Coloring", "price": 8500, "duration_time": "100 min" },
+        { "service_name": "Keratin Treatment", "price": 16500, "duration_time": "140 min" },
+        { "service_name": "Facial", "price": 4500, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2600, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3000, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1700, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 18000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 3800, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Bilal Waris", "specialty": "Hair Styling" },
+        { "name": "Kiran Bano", "specialty": "Bridal Makeup" },
+        { "name": "Adeel Rauf", "specialty": "Hair Cutting" },
+        { "name": "Sadia Bashir", "specialty": "Skin Care" },
+        { "name": "Rashid Iqbal", "specialty": "Beard Styling" },
+        { "name": "Zara Hameed", "specialty": "Hair Coloring" },
+        { "name": "Naveed Abbas", "specialty": "Keratin Treatments" },
+        { "name": "Madiha Aslam", "specialty": "Facials" },
+        { "name": "Usman Riaz", "specialty": "Men Grooming" },
+        { "name": "Hina Javed", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Bilal Waris", "specialty": "Hair Styling" },
+        { "name": "Kiran Bano", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "9% off between 2:00 PM - 4:00 PM"
+    },
+
+    {
+      "id": "PK-ABT-113",
+      "name": "Crystal Glow Lounge",
+      "state": "Khyber Pakhtunkhwa",
+      "city": "Abbottabad",
+      "rating": 4.6,
+      "reviews_count": 1985,
+      "distance_km": 2.4,
+      "full_address": "Mansehra Road, Abbottabad",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 09:00 PM" },
+      "short_description": "Premium beauty lounge with expert stylists.",
+      "services": [
+        { "service_name": "Haircut", "price": 3000, "duration_time": "45 min" },
+        { "service_name": "Hair Highlights", "price": 15000, "duration_time": "150 min" },
+        { "service_name": "Hair Coloring", "price": 10500, "duration_time": "120 min" },
+        { "service_name": "Keratin Treatment", "price": 19000, "duration_time": "150 min" },
+        { "service_name": "Facial", "price": 5500, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 3200, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3600, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 2100, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 23000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4400, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Shahbaz Khan", "specialty": "Hair Styling" },
+        { "name": "Areeba Noor", "specialty": "Bridal Makeup" },
+        { "name": "Imran Haider", "specialty": "Hair Cutting" },
+        { "name": "Samina Bibi", "specialty": "Skin Care" },
+        { "name": "Waqar Ali", "specialty": "Beard Styling" },
+        { "name": "Zunaira Sheikh", "specialty": "Hair Coloring" },
+        { "name": "Fahad Khan", "specialty": "Keratin Treatments" },
+        { "name": "Naila Riaz", "specialty": "Facials" },
+        { "name": "Kamran Shah", "specialty": "Men Grooming" },
+        { "name": "Hiba Tariq", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Shahbaz Khan", "specialty": "Hair Styling" },
+        { "name": "Areeba Noor", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "17% off between 1:00 PM - 3:00 PM"
+    },
+
+    {
+      "id": "PK-MRD-114",
+      "name": "Style Craft Salon",
+      "state": "Khyber Pakhtunkhwa",
+      "city": "Mardan",
+      "rating": 4.2,
+      "reviews_count": 1540,
+      "distance_km": 3.0,
+      "full_address": "Bank Road, Mardan",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:00 AM - 08:00 PM" },
+      "short_description": "Local favorite for consistent grooming services.",
+      "services": [
+        { "service_name": "Haircut", "price": 2500, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 12500, "duration_time": "130 min" },
+        { "service_name": "Hair Coloring", "price": 8800, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17000, "duration_time": "140 min" },
+        { "service_name": "Facial", "price": 4700, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2700, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3100, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1800, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 18500, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 3900, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Sajid Khan", "specialty": "Hair Styling" },
+        { "name": "Rukhsana Bibi", "specialty": "Bridal Makeup" },
+        { "name": "Naveed Ullah", "specialty": "Hair Cutting" },
+        { "name": "Shazia Noor", "specialty": "Skin Care" },
+        { "name": "Adil Khan", "specialty": "Beard Styling" },
+        { "name": "Khadija Gul", "specialty": "Hair Coloring" },
+        { "name": "Imtiaz Ahmed", "specialty": "Keratin Treatments" },
+        { "name": "Noreen Bibi", "specialty": "Facials" },
+        { "name": "Zeeshan Ullah", "specialty": "Men Grooming" },
+        { "name": "Huma Gul", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Sajid Khan", "specialty": "Hair Styling" },
+        { "name": "Rukhsana Bibi", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "10% off between 12:00 PM - 2:00 PM"
+    },
+
+    {
+      "id": "PK-LRK-115",
+      "name": "Beauty Edge Studio",
+      "state": "Sindh",
+      "city": "Larkana",
+      "rating": 4.3,
+      "reviews_count": 1625,
+      "distance_km": 2.7,
+      "full_address": "VIP Road, Larkana",
+      "opening_hours": { "days": "Monday - Sunday", "timing": "10:30 AM - 08:30 PM" },
+      "short_description": "Modern beauty studio with personalized services.",
+      "services": [
+        { "service_name": "Haircut", "price": 2600, "duration_time": "40 min" },
+        { "service_name": "Hair Highlights", "price": 13000, "duration_time": "140 min" },
+        { "service_name": "Hair Coloring", "price": 9000, "duration_time": "110 min" },
+        { "service_name": "Keratin Treatment", "price": 17200, "duration_time": "140 min" },
+        { "service_name": "Facial", "price": 4800, "duration_time": "60 min" },
+        { "service_name": "Manicure", "price": 2800, "duration_time": "40 min" },
+        { "service_name": "Pedicure", "price": 3200, "duration_time": "50 min" },
+        { "service_name": "Waxing", "price": 1900, "duration_time": "30 min" },
+        { "service_name": "Bridal Makeup", "price": 19000, "duration_time": "180 min" },
+        { "service_name": "Hair Spa", "price": 4000, "duration_time": "60 min" }
+      ],
+      "stylists": [
+        { "name": "Ghulam Mustafa", "specialty": "Hair Styling" },
+        { "name": "Nadia Soomro", "specialty": "Bridal Makeup" },
+        { "name": "Ali Nawaz", "specialty": "Hair Cutting" },
+        { "name": "Shabana Bibi", "specialty": "Skin Care" },
+        { "name": "Imdad Ali", "specialty": "Beard Styling" },
+        { "name": "Razia Shaikh", "specialty": "Hair Coloring" },
+        { "name": "Naeem Memon", "specialty": "Keratin Treatments" },
+        { "name": "Farida Soomro", "specialty": "Facials" },
+        { "name": "Zafar Ali", "specialty": "Men Grooming" },
+        { "name": "Sana Soomro", "specialty": "Party Makeup" }
+      ],
+      "top_rated_stylists": [
+        { "name": "Ghulam Mustafa", "specialty": "Hair Styling" },
+        { "name": "Nadia Soomro", "specialty": "Bridal Makeup" }
+      ],
+      "discount_offer": "11% off between 3:00 PM - 5:00 PM"
+    }
+  ]
+}

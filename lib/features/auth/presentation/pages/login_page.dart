@@ -4,12 +4,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:reactive_forms/reactive_forms.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../data/models/country_phone_data.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/country_service.dart';
 import 'verify_identity_page.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../dashboard/presentation/pages/dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -282,6 +284,20 @@ class _LoginPageState extends State<LoginPage> {
         final phoneNumber =
             '${_selectedCountry!.dialCode}${identifier.replaceAll(RegExp(r'\D'), '')}';
 
+        if (await _authService.isSignedInWithIdentifier(
+          identifier: identifier,
+          isPhoneMode: true,
+          phoneNumber: phoneNumber,
+        )) {
+          if (!mounted) {
+            return;
+          }
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
+          );
+          return;
+        }
+
         unawaited(
           _authService.verifyPhone(
             phoneNumber,
@@ -333,49 +349,108 @@ class _LoginPageState extends State<LoginPage> {
         );
         return;
       } else {
-        final emailOtp = (_random.nextInt(900000) + 100000).toString();
-        final sent = await _authService.sendEmailOTP(identifier, emailOtp);
+        final normalizedEmail = _authService.normalizeEmail(identifier);
 
-        if (!sent) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Failed to send OTP email. Please try again.'),
-                backgroundColor: AppColors.errorRed,
-              ),
-            );
+        bool isVerifiedEmail = false;
+        try {
+          isVerifiedEmail = await _authService.isEmailVerifiedInFirestore(
+            normalizedEmail,
+          );
+        } on FirebaseException catch (e) {
+          final isTransientFirestoreChannelIssue =
+              e.code == 'channel-error' || e.code == 'unavailable';
+          if (!isTransientFirestoreChannelIssue) {
+            rethrow;
           }
+        }
+
+        if (isVerifiedEmail) {
+          await _authService.setSessionVerifiedEmail(normalizedEmail);
+          await _authService.ensureAuthenticatedSessionForVerifiedEmail(
+            normalizedEmail,
+          );
+          if (!mounted) {
+            return;
+          }
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DashboardPage()),
+          );
           return;
         }
+
+        final emailOtp = (_random.nextInt(900000) + 100000).toString();
+        final sent = await _authService.sendEmailOTP(normalizedEmail, emailOtp);
+
+        if (!sent) {
+          if (!mounted) {
+            return;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send OTP email. Please try again.'),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+          return;
+        }
+
+        await _authService.saveEmailOtp(
+          email: normalizedEmail,
+          otpCode: emailOtp,
+        );
 
         if (!mounted) {
           return;
         }
 
-        await Navigator.of(context).push(
+        final verifiedInOtp = await Navigator.of(context).push<bool>(
           MaterialPageRoute(
-            builder: (_) => VerifyIdentityPage(
-              contact: identifier,
-              initialEmailOtp: emailOtp,
-            ),
+            builder: (_) =>
+                VerifyIdentityPage(contact: normalizedEmail, isEmailFlow: true),
           ),
         );
+
+        if (!mounted) {
+          return;
+        }
+
+        if (verifiedInOtp == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Email verified. Please continue again to sign in.',
+              ),
+              backgroundColor: AppColors.successGreen,
+            ),
+          );
+        }
+        return;
+      }
+    } on FirebaseException catch (e) {
+      if (!mounted) {
+        return;
       }
 
-      (_form.control('identifier') as FormControl<String>).value = '';
-      (_form.control('identifier') as FormControl<String>)
-        ..markAsUntouched()
-        ..markAsPristine();
-      setState(() {
-        _isPhoneMode = false;
-      });
-    } catch (_) {
+      final message = switch (e.code) {
+        'channel-error' =>
+          'Firestore connection channel failed. Fully stop the app and run it again (not hot reload).',
+        'permission-denied' =>
+          'Firebase permission denied while checking/saving OTP. Please update Firestore rules.',
+        'unavailable' =>
+          'Firebase service is currently unavailable. Please try again.',
+        _ => e.message ?? 'Firebase error: ${e.code}',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.errorRed),
+      );
+    } catch (e) {
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to continue. Please try again.'),
+        SnackBar(
+          content: Text('Unable to continue: $e'),
           backgroundColor: AppColors.errorRed,
         ),
       );
@@ -437,11 +512,107 @@ class _LoginPageState extends State<LoginPage> {
     return '';
   }
 
+  Future<void> _continueWithGoogle() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final credential = await _authService.signInWithGoogle();
+      if (credential?.user == null || !mounted) {
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      final message = e.message ?? 'Google sign-in failed.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.errorRed),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign-in failed: $e'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _continueWithApple() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final credential = await _authService.signInWithApple();
+      if (credential?.user == null || !mounted) {
+        return;
+      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = switch (e.code) {
+        'apple-not-available' =>
+          'Apple sign-in is not available on this device.',
+        'apple-not-configured' =>
+          'Apple sign-in setup is incomplete. Configure APPLE_SERVICE_ID and APPLE_REDIRECT_URI.',
+        _ => e.message ?? 'Apple sign-in failed.',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.errorRed),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Apple sign-in failed: $e'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
   Widget _socialButton({
     required String title,
     required Color background,
     required Color foreground,
     required String iconPath,
+    required VoidCallback onPressed,
   }) {
     return SizedBox(
       height: 52,
@@ -454,7 +625,7 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        onPressed: () {},
+        onPressed: _isSubmitting ? null : onPressed,
         child: Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -677,6 +848,7 @@ class _LoginPageState extends State<LoginPage> {
                                   background: AppColors.dark1,
                                   foreground: Colors.white,
                                   iconPath: 'assets/apple_icon.png',
+                                  onPressed: _continueWithApple,
                                 ),
                                 const SizedBox(height: 10),
                                 _socialButton(
@@ -684,6 +856,7 @@ class _LoginPageState extends State<LoginPage> {
                                   background: Colors.white,
                                   foreground: AppColors.dark1,
                                   iconPath: 'assets/Google_icon.png',
+                                  onPressed: _continueWithGoogle,
                                 ),
                               ],
                             ),

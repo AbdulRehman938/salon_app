@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../data/services/auth_service.dart';
+import '../../../dashboard/presentation/pages/dashboard_page.dart';
 import 'login_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -10,6 +12,7 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  final _authService = AuthService();
   bool _openShutter = false;
   bool _showSplash = true;
 
@@ -28,11 +31,32 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authChild = StreamBuilder<Object?>(
+      stream: _authService.authStateChanges(),
+      builder: (context, snapshot) {
+        return FutureBuilder<bool>(
+          future: _authService.isCurrentUserAllowed(),
+          builder: (context, allowedSnapshot) {
+            if (allowedSnapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox.shrink();
+            }
+
+            final isAllowed = allowedSnapshot.data ?? false;
+            if (isAllowed) {
+              return const DashboardPage();
+            }
+
+            return const LoginPage();
+          },
+        );
+      },
+    );
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const LoginPage(),
+          authChild,
           if (_showSplash)
             IgnorePointer(
               child: AnimatedSlide(

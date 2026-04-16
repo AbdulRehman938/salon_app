@@ -19,6 +19,10 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta
+    name="google-signin-client_id"
+    content="34564543295-7k0dbtkufmsg62anghgjrhs52cqla5kf.apps.googleusercontent.com"
+  >
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,7 +35,20 @@
 
   <title>salon_app</title>
   <link rel="manifest" href="manifest.json">
-  <script defer src="/_vercel/insights/script.js"></script>
+  <script>
+    (function () {
+      var host = window.location.hostname;
+      var isLocal = host === 'localhost' || host === '127.0.0.1';
+      if (isLocal) {
+        return;
+      }
+
+      var s = document.createElement('script');
+      s.defer = true;
+      s.src = '/_vercel/insights/script.js';
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body>
   <!--

@@ -14,13 +14,13 @@ class VerifyIdentityPage extends StatefulWidget {
     required this.contact,
     this.initialVerificationId,
     this.initialResendToken,
-    this.initialEmailOtp,
+    this.isEmailFlow = false,
   });
 
   final String contact;
   final String? initialVerificationId;
   final int? initialResendToken;
-  final String? initialEmailOtp;
+  final bool isEmailFlow;
 
   @override
   State<VerifyIdentityPage> createState() => _VerifyIdentityPageState();
@@ -38,9 +38,6 @@ class _VerifyIdentityPageState extends State<VerifyIdentityPage> {
   int _resendSecondsLeft = 0;
   bool _isResending = false;
   String _errorText = '';
-  String? _emailOtp;
-
-  bool get _isEmailFlow => _emailOtp != null;
 
   @override
   void initState() {
@@ -49,8 +46,7 @@ class _VerifyIdentityPageState extends State<VerifyIdentityPage> {
     _focusNodes = List.generate(6, (_) => FocusNode());
     _verificationId = widget.initialVerificationId;
     _resendToken = widget.initialResendToken;
-    _emailOtp = widget.initialEmailOtp;
-    _isSendingCode = !_isEmailFlow && _verificationId == null;
+    _isSendingCode = _verificationId == null;
     for (final focus in _focusNodes) {
       focus.addListener(() {
         if (mounted) {
@@ -75,7 +71,7 @@ class _VerifyIdentityPageState extends State<VerifyIdentityPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isEmailFlow && _verificationId == null && _isSendingCode) {
+    if (!widget.isEmailFlow && _verificationId == null && _isSendingCode) {
       _startPhoneVerification();
     }
   }
@@ -145,20 +141,45 @@ class _VerifyIdentityPageState extends State<VerifyIdentityPage> {
       return;
     }
 
-    if (_isEmailFlow) {
-      if (code != _emailOtp) {
-        setState(() {
-          _errorText = 'Invalid code. Please try again.';
-        });
-        return;
-      }
+    if (widget.isEmailFlow) {
+      setState(() {
+        _errorText = '';
+        _isVerifyingCode = true;
+      });
 
-      if (!mounted) {
-        return;
+      try {
+        final verified = await _authService.verifyEmailOtp(
+          email: widget.contact,
+          otpCode: code,
+        );
+        if (!verified) {
+          if (mounted) {
+            setState(() {
+              _errorText = 'Invalid or expired code. Please try again.';
+            });
+          }
+          return;
+        }
+
+        await _authService.setSessionVerifiedEmail(widget.contact);
+
+        if (!mounted) {
+          return;
+        }
+        Navigator.of(context).pop(true);
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _errorText = 'Unable to verify OTP. Please try again.';
+          });
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isVerifyingCode = false;
+          });
+        }
       }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-      );
       return;
     }
 
@@ -281,14 +302,14 @@ class _VerifyIdentityPageState extends State<VerifyIdentityPage> {
   }
 
   Future<bool> _requestResendOtp() async {
-    if (_isEmailFlow) {
-      final nextOtp = (Random().nextInt(900000) + 100000).toString();
+    if (widget.isEmailFlow) {
+      final otp = (Random().nextInt(900000) + 100000).toString();
       try {
-        final sent = await _authService.sendEmailOTP(widget.contact, nextOtp);
+        final sent = await _authService.sendEmailOTP(widget.contact, otp);
         if (!sent) {
           return false;
         }
-        _emailOtp = nextOtp;
+        await _authService.saveEmailOtp(email: widget.contact, otpCode: otp);
         return true;
       } catch (_) {
         return false;

@@ -1,20 +1,51 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
-  AuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+  AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
+    : _auth = auth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance,
+      _googleSignIn = kIsWeb ? null : GoogleSignIn(scopes: ['email']);
 
   final FirebaseAuth _auth;
-  final String _brevoApiKey = const String.fromEnvironment(
-    'BREVO_API_KEY',
-    defaultValue: 'YOUR_BREVO_API_KEY_HERE',
-  );
+  final FirebaseFirestore _firestore;
+  final GoogleSignIn? _googleSignIn;
+  static String? _sessionVerifiedEmail;
+  static const String _emailOtpCollection = 'emailOtpVerifications';
+  static const String _usersCollection = 'users';
+  static const String _locationSearchCollection = 'locationSearchHistory';
+  static const String _sessionVerifiedEmailKey = 'session_verified_email';
+  static const Duration _defaultEmailOtpTtl = Duration(minutes: 5);
+  static const String _emailOtpPasswordPepper = 'salon_app_email_otp_v1';
+
+  final String _brevoApiKey =
+      (dotenv.env['BREVO_API_KEY'] ??
+              const String.fromEnvironment('BREVO_API_KEY'))
+          .trim();
   final String _brevoSenderName = 'Salon App';
-  final String _brevoSenderEmail = const String.fromEnvironment(
-    'BREVO_SENDER_EMAIL',
-    defaultValue: 'your-verified-brevo-email@example.com',
+  final String _brevoSenderEmail =
+      (dotenv.env['BREVO_SENDER_EMAIL'] ??
+              const String.fromEnvironment(
+                'BREVO_SENDER_EMAIL',
+                defaultValue: 'no-reply@salonapp.local',
+              ))
+          .trim();
+  final String _appleServiceId = const String.fromEnvironment(
+    'APPLE_SERVICE_ID',
+    defaultValue: 'com.example.salon.service',
+  );
+  final String _appleRedirectUri = const String.fromEnvironment(
+    'APPLE_REDIRECT_URI',
+    defaultValue: 'https://salonapp-3ba4c.firebaseapp.com/__/auth/handler',
   );
 
   // 1. Send Email Link
@@ -29,22 +60,17 @@ class AuthService {
     );
 
     await _auth.sendSignInLinkToEmail(email: email, actionCodeSettings: acs);
-
-    // Save email locally to verify later
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userEmail', email);
   }
 
   // 2. Handle Incoming Link
-  Future<void> handleLink(String link) async {
+  Future<UserCredential?> handleLink(String link, {String? email}) async {
     if (_auth.isSignInWithEmailLink(link)) {
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('userEmail');
-
-      if (email != null) {
-        await _auth.signInWithEmailLink(email: email, emailLink: link);
+      final resolvedEmail = email?.trim();
+      if (resolvedEmail != null && resolvedEmail.isNotEmpty) {
+        return _auth.signInWithEmailLink(email: resolvedEmail, emailLink: link);
       }
     }
+    return null;
   }
 
   // 3. Phone OTP verification
@@ -85,7 +111,165 @@ class AuthService {
     return _auth.signInWithCredential(credential);
   }
 
+  Future<UserCredential?> signInWithGoogle() async {
+    if (kIsWeb) {
+      final provider = GoogleAuthProvider()
+        ..addScope('email')
+        ..setCustomParameters({'prompt': 'select_account'});
+      final userCredential = await _auth.signInWithPopup(provider);
+      await upsertUserProfile(userCredential.user, loginMethod: 'google');
+      return userCredential;
+    }
+
+    final googleSignIn = _googleSignIn;
+    if (googleSignIn == null) {
+      throw FirebaseAuthException(
+        code: 'google-not-available',
+        message: 'Google sign-in is not available on this platform.',
+      );
+    }
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      return null;
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _auth.signInWithCredential(credential);
+    await upsertUserProfile(userCredential.user, loginMethod: 'google');
+    return userCredential;
+  }
+
+  Future<UserCredential?> signInWithApple() async {
+    final isAvailable = await SignInWithApple.isAvailable();
+    if (!isAvailable) {
+      throw FirebaseAuthException(
+        code: 'apple-not-available',
+        message: 'Apple Sign-In is not available on this device.',
+      );
+    }
+
+    if (_appleServiceId == 'com.example.salon.service') {
+      throw FirebaseAuthException(
+        code: 'apple-not-configured',
+        message:
+            'Apple Sign-In is not configured. Set APPLE_SERVICE_ID and APPLE_REDIRECT_URI.',
+      );
+    }
+
+    final rawNonce = _generateNonce();
+    final nonce = _sha256ofString(rawNonce);
+    final webAuthOptions = WebAuthenticationOptions(
+      clientId: _appleServiceId,
+      redirectUri: Uri.parse(_appleRedirectUri),
+    );
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [AppleIDAuthorizationScopes.email],
+      nonce: nonce,
+      webAuthenticationOptions:
+          kIsWeb || defaultTargetPlatform == TargetPlatform.android
+          ? webAuthOptions
+          : null,
+    );
+
+    final oauthCredential = OAuthProvider('apple.com').credential(
+      idToken: appleCredential.identityToken,
+      accessToken: appleCredential.authorizationCode,
+      rawNonce: rawNonce,
+    );
+
+    final userCredential = await _auth.signInWithCredential(oauthCredential);
+    await upsertUserProfile(userCredential.user, loginMethod: 'apple');
+    return userCredential;
+  }
+
+  Future<void> upsertUserProfile(
+    User? user, {
+    required String loginMethod,
+  }) async {
+    if (user == null) {
+      return;
+    }
+
+    final userDoc = _firestore.collection(_usersCollection).doc(user.uid);
+    final now = FieldValue.serverTimestamp();
+    final providerIds = user.providerData
+        .map((p) => p.providerId)
+        .where((p) => p.isNotEmpty)
+        .toList();
+    final isSocialVerified = loginMethod == 'google' || loginMethod == 'apple';
+    final isVerified = user.emailVerified || isSocialVerified;
+
+    final snapshot = await userDoc.get();
+    await userDoc.set({
+      'uid': user.uid,
+      'email': user.email,
+      'displayName': user.displayName,
+      'photoURL': user.photoURL,
+      'phoneNumber': user.phoneNumber,
+      'providerIds': providerIds,
+      'loginMethod': loginMethod,
+      'emailVerified': user.emailVerified,
+      'isVerified': isVerified,
+      'lastLoginAt': now,
+      'updatedAt': now,
+      if (!snapshot.exists) 'createdAt': now,
+    }, SetOptions(merge: true));
+  }
+
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  String _emailOtpPassword(String normalizedEmail) {
+    final seed = '$normalizedEmail|$_emailOtpPasswordPepper';
+    // Deterministic strong password for email-OTP-backed auth sessions.
+    final hash = _sha256ofString(seed);
+    return 'S@${hash.substring(0, 30)}';
+  }
+
+  Future<User?> refreshCurrentUser() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+    await user.reload();
+    return _auth.currentUser;
+  }
+
+  String normalizeEmail(String email) {
+    return email.trim().toLowerCase();
+  }
+
+  String _emailDocId(String email) {
+    return base64Url.encode(utf8.encode(normalizeEmail(email)));
+  }
+
   Future<bool> sendEmailOTP(String email, String otpCode) async {
+    if (_brevoApiKey.trim().isEmpty) {
+      throw FirebaseAuthException(
+        code: 'brevo-not-configured',
+        message: 'BREVO_API_KEY is not configured for this build.',
+      );
+    }
+
     final url = Uri.parse('https://api.brevo.com/v3/smtp/email');
 
     final response = await http.post(
@@ -98,14 +282,313 @@ class AuthService {
       body: jsonEncode({
         'sender': {'name': _brevoSenderName, 'email': _brevoSenderEmail},
         'to': [
-          {'email': email.trim()},
+          {'email': normalizeEmail(email)},
         ],
         'subject': 'Your Salon App Verification Code',
         'htmlContent':
-            '<html><body><h1>Your OTP is: $otpCode</h1><p>This code expires in 5 minutes.</p></body></html>',
+            '<html><body><h2>Your OTP is: $otpCode</h2><p>This code expires in 5 minutes.</p></body></html>',
       }),
     );
 
-    return response.statusCode == 201 || response.statusCode == 200;
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<void> saveEmailOtp({
+    required String email,
+    required String otpCode,
+    Duration expiresIn = _defaultEmailOtpTtl,
+  }) async {
+    final now = DateTime.now();
+    final normalizedEmail = normalizeEmail(email);
+    final expiresAt = now.add(expiresIn);
+
+    await _firestore
+        .collection(_emailOtpCollection)
+        .doc(_emailDocId(email))
+        .set({
+          'email': normalizedEmail,
+          'otp': otpCode,
+          'isVerified': false,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'otpExpiresAt': Timestamp.fromDate(expiresAt),
+        }, SetOptions(merge: true));
+  }
+
+  Future<bool> verifyEmailOtp({
+    required String email,
+    required String otpCode,
+  }) async {
+    final docRef = _firestore
+        .collection(_emailOtpCollection)
+        .doc(_emailDocId(email));
+    final snapshot = await docRef.get();
+
+    final data = snapshot.data();
+    if (data == null) {
+      return false;
+    }
+
+    final savedOtp = (data['otp'] as String? ?? '').trim();
+    final expiry = data['otpExpiresAt'] as Timestamp?;
+    final isExpired =
+        expiry == null || expiry.toDate().isBefore(DateTime.now());
+    if (isExpired || savedOtp != otpCode.trim()) {
+      await docRef.set({
+        'isVerified': false,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return false;
+    }
+
+    await snapshot.reference.set({
+      'isVerified': true,
+      'otp': null,
+      'verifiedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await setSessionVerifiedEmail(email);
+
+    return true;
+  }
+
+  Future<bool> isEmailVerifiedInFirestore(String email) async {
+    final snapshot = await _firestore
+        .collection(_emailOtpCollection)
+        .doc(_emailDocId(email))
+        .get();
+    final data = snapshot.data();
+    if (data == null) {
+      return false;
+    }
+    final isVerified = data['isVerified'] == true;
+    if (isVerified) {
+      await setSessionVerifiedEmail(email);
+    }
+    return isVerified;
+  }
+
+  Future<void> saveLocationSearch({required String selectedLocation}) async {
+    final location = selectedLocation.trim();
+    if (location.isEmpty) {
+      return;
+    }
+
+    final user = _auth.currentUser;
+    final email = user?.email?.trim().toLowerCase();
+    if (email == null || email.isEmpty) {
+      return;
+    }
+
+    await _firestore.collection(_locationSearchCollection).add({
+      'userUid': user!.uid,
+      'userEmail': email,
+      'searchedLocation': location,
+      'searchedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<bool> isCurrentUserAllowed() async {
+    try {
+      final user = await refreshCurrentUser();
+      if (user == null) {
+        final email = await getSessionVerifiedEmail();
+        if (email == null || email.isEmpty) {
+          return false;
+        }
+        return isEmailVerifiedInFirestore(email);
+      }
+
+      if (user.isAnonymous) {
+        final snapshot = await _firestore
+            .collection(_usersCollection)
+            .doc(user.uid)
+            .get();
+        final data = snapshot.data();
+        return data != null && data['isVerified'] == true;
+      }
+
+      // Phone users do not have an email verification requirement.
+      if (user.email == null || user.email!.isEmpty) {
+        return true;
+      }
+
+      return isEmailVerifiedInFirestore(user.email!);
+    } catch (_) {
+      final email = await getSessionVerifiedEmail();
+      return email != null && email.isNotEmpty;
+    }
+  }
+
+  Future<bool> isSignedInWithIdentifier({
+    required String identifier,
+    required bool isPhoneMode,
+    String? phoneNumber,
+  }) async {
+    final user = await refreshCurrentUser();
+    if (user == null) {
+      if (isPhoneMode) {
+        return false;
+      }
+
+      final email = await getSessionVerifiedEmail();
+      final targetEmail = identifier.trim().toLowerCase();
+      if (email == null || email != targetEmail) {
+        return false;
+      }
+
+      return isEmailVerifiedInFirestore(targetEmail);
+    }
+
+    if (isPhoneMode) {
+      final currentPhone = user.phoneNumber?.trim() ?? '';
+      final targetPhone = (phoneNumber ?? '').trim();
+      return currentPhone.isNotEmpty && currentPhone == targetPhone;
+    }
+
+    if (user.isAnonymous) {
+      final snapshot = await _firestore
+          .collection(_usersCollection)
+          .doc(user.uid)
+          .get();
+      final data = snapshot.data();
+      final storedEmail = (data?['email'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+      final targetEmail = identifier.trim().toLowerCase();
+      return storedEmail.isNotEmpty &&
+          storedEmail == targetEmail &&
+          data?['isVerified'] == true;
+    }
+
+    final currentEmail = user.email?.trim().toLowerCase() ?? '';
+    final targetEmail = identifier.trim().toLowerCase();
+    final firestoreVerified = await isEmailVerifiedInFirestore(targetEmail);
+    return currentEmail.isNotEmpty &&
+        currentEmail == targetEmail &&
+        firestoreVerified;
+  }
+
+  bool isEmailLink(String link) {
+    return _auth.isSignInWithEmailLink(link);
+  }
+
+  String? pendingEmailForLink;
+
+  Future<String?> getSessionVerifiedEmail() async {
+    if (_sessionVerifiedEmail != null && _sessionVerifiedEmail!.isNotEmpty) {
+      return _sessionVerifiedEmail;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_sessionVerifiedEmailKey);
+    if (stored != null && stored.isNotEmpty) {
+      _sessionVerifiedEmail = normalizeEmail(stored);
+    }
+
+    return _sessionVerifiedEmail;
+  }
+
+  Future<void> setSessionVerifiedEmail(String email) async {
+    final normalized = normalizeEmail(email);
+    _sessionVerifiedEmail = normalized.isEmpty ? null : normalized;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (_sessionVerifiedEmail == null) {
+      await prefs.remove(_sessionVerifiedEmailKey);
+    } else {
+      await prefs.setString(_sessionVerifiedEmailKey, _sessionVerifiedEmail!);
+    }
+  }
+
+  void setPendingEmailForLink(String email) {
+    final normalized = email.trim().toLowerCase();
+    pendingEmailForLink = normalized.isEmpty ? null : normalized;
+  }
+
+  void clearPendingEmailForLink() {
+    pendingEmailForLink = null;
+  }
+
+  bool get hasPendingEmailForLink => pendingEmailForLink != null;
+
+  String? get currentUserEmail {
+    return _auth.currentUser?.email;
+  }
+
+  bool get isCurrentUserEmailVerified {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null || user.email!.isEmpty) {
+      return false;
+    }
+    return user.emailVerified;
+  }
+
+  Stream<User?> authStateChanges() {
+    return _auth.authStateChanges();
+  }
+
+  Future<void> signOut() async {
+    clearPendingEmailForLink();
+    _sessionVerifiedEmail = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionVerifiedEmailKey);
+    await _auth.signOut();
+  }
+
+  Future<User?> ensureAuthenticatedSessionForVerifiedEmail(String email) async {
+    final normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail.isEmpty) {
+      return _auth.currentUser;
+    }
+
+    await setSessionVerifiedEmail(normalizedEmail);
+
+    final isVerified = await isEmailVerifiedInFirestore(normalizedEmail);
+    if (!isVerified) {
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message: 'Email is not verified with OTP yet.',
+      );
+    }
+
+    User? user = await refreshCurrentUser();
+    final currentEmail = user?.email?.trim().toLowerCase();
+    final isMismatchedNamedUser =
+        user != null && !user.isAnonymous && currentEmail != normalizedEmail;
+
+    if (isMismatchedNamedUser) {
+      await _auth.signOut();
+      user = null;
+    }
+
+    if (user == null) {
+      final credential = await _auth.signInAnonymously();
+      user = credential.user;
+    }
+
+    if (user == null) {
+      return null;
+    }
+
+    final now = FieldValue.serverTimestamp();
+    final userDoc = _firestore.collection(_usersCollection).doc(user.uid);
+    final snapshot = await userDoc.get();
+
+    await userDoc.set({
+      'uid': user.uid,
+      'email': normalizedEmail,
+      'loginMethod': 'email-otp-session',
+      'isVerified': true,
+      'emailVerified': false,
+      'verifiedEmail': normalizedEmail,
+      'lastLoginAt': now,
+      'updatedAt': now,
+      if (!snapshot.exists) 'createdAt': now,
+    }, SetOptions(merge: true));
+
+    return user;
   }
 }
