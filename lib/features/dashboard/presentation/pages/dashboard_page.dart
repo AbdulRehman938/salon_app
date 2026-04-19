@@ -77,7 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final location = city.isNotEmpty && state.isNotEmpty
             ? '$city, $state'
             : '';
-        if (location.isNotEmpty && _allLocationOptions.contains(location)) {
+        if (location.isNotEmpty) {
           setState(() {
             _selectedLocation = location;
           });
@@ -147,10 +147,8 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _citiesByState = byState;
       _allLocationOptions = options;
-      if (_allLocationOptions.isNotEmpty &&
-          !_allLocationOptions.contains(_selectedLocation)) {
-        _selectedLocation = _allLocationOptions.first;
-      }
+      // Remove fallback: do not set _selectedLocation to first city
+      // Do not change _selectedLocation here
     });
     // Call geolocation after options are loaded
     await _trySetCurrentLocation();
