@@ -82,7 +82,9 @@ class _DashboardPageState extends State<DashboardPage> {
         } else if (state.isNotEmpty) {
           location = state;
         }
-        print('GEOLOCATION: city=[32m$city[0m, state=[32m$state[0m, location=[32m$location[0m');
+        print(
+          'GEOLOCATION: city=[32m$city[0m, state=[32m$state[0m, location=[32m$location[0m',
+        );
         if (location.isNotEmpty) {
           setState(() {
             _selectedLocation = location;
