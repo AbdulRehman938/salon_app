@@ -67,31 +67,35 @@ class _DashboardPageState extends State<DashboardPage> {
       }
       if (permission == LocationPermission.deniedForever) return;
       final position = await Geolocator.getCurrentPosition();
+      if (position == null) {
+        print('Geolocation error: Position is null');
+        return;
+      }
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-      if (placemarks.isNotEmpty) {
-        final city = placemarks.first.locality ?? '';
-        final state = placemarks.first.administrativeArea ?? '';
-        String location = '';
-        if (city.isNotEmpty && state.isNotEmpty) {
-          location = '$city, $state';
-        } else if (city.isNotEmpty) {
-          location = city;
-        } else if (state.isNotEmpty) {
-          location = state;
-        }
-        print(
-          'GEOLOCATION: city=[32m$city[0m, state=[32m$state[0m, location=[32m$location[0m',
-        );
-        if (location.isNotEmpty) {
-          setState(() {
-            _selectedLocation = location;
-          });
-          await _loadServicesFromDatabase();
-          await _loadSalonsFromDatabase();
-        }
+      if (placemarks == null || placemarks.isEmpty) {
+        print('Geolocation error: Placemarks is null or empty');
+        return;
+      }
+      final city = placemarks.first.locality ?? '';
+      final state = placemarks.first.administrativeArea ?? '';
+      String location = '';
+      if (city.isNotEmpty && state.isNotEmpty) {
+        location = '$city, $state';
+      } else if (city.isNotEmpty) {
+        location = city;
+      } else if (state.isNotEmpty) {
+        location = state;
+      }
+      print('GEOLOCATION: city=$city, state=$state, location=$location');
+      if (location.isNotEmpty) {
+        setState(() {
+          _selectedLocation = location;
+        });
+        await _loadServicesFromDatabase();
+        await _loadSalonsFromDatabase();
       }
     } catch (e) {
       print('Geolocation error: $e');
