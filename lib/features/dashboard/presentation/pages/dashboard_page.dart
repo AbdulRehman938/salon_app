@@ -67,16 +67,15 @@ class _DashboardPageState extends State<DashboardPage> {
       }
       if (permission == LocationPermission.deniedForever) return;
       final position = await Geolocator.getCurrentPosition();
-      if (position == null) {
-        print('Geolocation error: Position is null');
-        return;
-      }
+      // position is never null in Dart null safety
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-      if (placemarks == null || placemarks.isEmpty) {
-        print('Geolocation error: Placemarks is null or empty');
+      // placemarks is never null in Dart null safety
+      if (placemarks.isEmpty) {
+        // ignore: avoid_print
+        print('Geolocation error: Placemarks is empty');
         return;
       }
       final city = placemarks.first.locality ?? '';
@@ -89,6 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
       } else if (state.isNotEmpty) {
         location = state;
       }
+      // ignore: avoid_print
       print('GEOLOCATION: city=$city, state=$state, location=$location');
       if (location.isNotEmpty) {
         setState(() {
@@ -98,6 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
         await _loadSalonsFromDatabase();
       }
     } catch (e) {
+      // ignore: avoid_print
       print('Geolocation error: $e');
     }
   }
