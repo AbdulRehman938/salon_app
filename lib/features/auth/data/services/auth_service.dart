@@ -1,12 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -39,14 +36,6 @@ class AuthService {
                 defaultValue: 'no-reply@salonapp.local',
               ))
           .trim();
-  final String _appleServiceId = const String.fromEnvironment(
-    'APPLE_SERVICE_ID',
-    defaultValue: 'com.example.salon.service',
-  );
-  final String _appleRedirectUri = const String.fromEnvironment(
-    'APPLE_REDIRECT_URI',
-    defaultValue: 'https://salonapp-3ba4c.firebaseapp.com/__/auth/handler',
-  );
 
   // 1. Send Email Link
   Future<void> sendSignInLink(String email) async {
@@ -145,49 +134,6 @@ class AuthService {
     return userCredential;
   }
 
-  Future<UserCredential?> signInWithApple() async {
-    final isAvailable = await SignInWithApple.isAvailable();
-    if (!isAvailable) {
-      throw FirebaseAuthException(
-        code: 'apple-not-available',
-        message: 'Apple Sign-In is not available on this device.',
-      );
-    }
-
-    if (_appleServiceId == 'com.example.salon.service') {
-      throw FirebaseAuthException(
-        code: 'apple-not-configured',
-        message:
-            'Apple Sign-In is not configured. Set APPLE_SERVICE_ID and APPLE_REDIRECT_URI.',
-      );
-    }
-
-    final rawNonce = _generateNonce();
-    final nonce = _sha256ofString(rawNonce);
-    final webAuthOptions = WebAuthenticationOptions(
-      clientId: _appleServiceId,
-      redirectUri: Uri.parse(_appleRedirectUri),
-    );
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [AppleIDAuthorizationScopes.email],
-      nonce: nonce,
-      webAuthenticationOptions:
-          kIsWeb || defaultTargetPlatform == TargetPlatform.android
-          ? webAuthOptions
-          : null,
-    );
-
-    final oauthCredential = OAuthProvider('apple.com').credential(
-      idToken: appleCredential.identityToken,
-      accessToken: appleCredential.authorizationCode,
-      rawNonce: rawNonce,
-    );
-
-    final userCredential = await _auth.signInWithCredential(oauthCredential);
-    await upsertUserProfile(userCredential.user, loginMethod: 'apple');
-    return userCredential;
-  }
-
   Future<void> upsertUserProfile(
     User? user, {
     required String loginMethod,
@@ -202,7 +148,7 @@ class AuthService {
         .map((p) => p.providerId)
         .where((p) => p.isNotEmpty)
         .toList();
-    final isSocialVerified = loginMethod == 'google' || loginMethod == 'apple';
+    final isSocialVerified = loginMethod == 'google';
     final isVerified = user.emailVerified || isSocialVerified;
 
     final snapshot = await userDoc.get();
@@ -229,22 +175,6 @@ class AuthService {
         source: loginMethod,
       );
     }
-  }
-
-  String _generateNonce([int length = 32]) {
-    const charset =
-        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-    final random = Random.secure();
-    return List.generate(
-      length,
-      (_) => charset[random.nextInt(charset.length)],
-    ).join();
-  }
-
-  String _sha256ofString(String input) {
-    final bytes = utf8.encode(input);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
   }
 
   Future<User?> refreshCurrentUser() async {

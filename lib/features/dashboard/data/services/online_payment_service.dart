@@ -306,8 +306,6 @@ class OnlinePaymentService {
     switch (paymentMethodType) {
       case OnlinePaymentMethodType.card:
         return 'Card (Demo)';
-      case OnlinePaymentMethodType.applePay:
-        return 'Apple Pay (Demo)';
       case OnlinePaymentMethodType.googlePay:
         return 'Google Pay (Demo)';
     }
@@ -443,7 +441,7 @@ class StoredPaymentCard {
   }
 }
 
-enum OnlinePaymentMethodType { card, applePay, googlePay }
+enum OnlinePaymentMethodType { card, googlePay }
 
 class SharedPreferencesAsyncLoader {
   Future<SharedPreferences> instance() {

@@ -14,7 +14,7 @@ class PaymentMethodPage extends StatefulWidget {
   State<PaymentMethodPage> createState() => _PaymentMethodPageState();
 }
 
-enum _PaymentMethodType { card, applePay, googlePay }
+enum _PaymentMethodType { card, googlePay }
 
 class _PaymentMethodPageState extends State<PaymentMethodPage> {
   final OnlinePaymentService _onlinePaymentService = OnlinePaymentService();
@@ -284,8 +284,6 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     switch (type) {
       case _PaymentMethodType.card:
         return OnlinePaymentMethodType.card;
-      case _PaymentMethodType.applePay:
-        return OnlinePaymentMethodType.applePay;
       case _PaymentMethodType.googlePay:
         return OnlinePaymentMethodType.googlePay;
     }
@@ -590,35 +588,6 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
               child: Column(
                 children: [
                   _buildCardSection(),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: _paymentOptionTile(
-                      title: 'Apple Pay',
-                      value: _PaymentMethodType.applePay,
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: const Text(
-                          'APay',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(
