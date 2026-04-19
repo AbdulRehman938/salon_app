@@ -5,6 +5,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function currentUserProfileEmail() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      let rawEmail = userDoc.data.email;
+      return rawEmail is string ? rawEmail.lower() : '';
+    }
+
+    function bookingOwnedByCurrentIdentity() {
+      let bookingUid = resource.data.receipt.customer.uid;
+      let bookingEmail = resource.data.receipt.customer.email;
+      let profileEmail = currentUserProfileEmail();
+      return bookingUid == request.auth.uid
+        || (
+          bookingEmail is string
+          && bookingEmail.lower() == profileEmail
+          && profileEmail != ''
+        );
+    }
+
     // Social login profile docs: each user can only read/write their own doc.
     match /users/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
@@ -16,6 +34,14 @@ service cloud.firestore {
     // OTP docs used before login. Keep list blocked to reduce data exposure.
     // For stronger security, move OTP verification to Cloud Functions.
     match /emailOtpVerifications/{docId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // Email index used for pre-auth uniqueness checks during signup.
+    match /registeredEmails/{docId} {
       allow get: if true;
       allow list: if false;
       allow create, update: if true;
@@ -45,10 +71,10 @@ service cloud.firestore {
         && request.resource.data.salonId is string
         && request.resource.data.paymentMode == 'pay_at_salon'
         && request.resource.data.receipt.customer.uid == request.auth.uid;
-      allow get: if isSignedIn() && resource.data.receipt.customer.uid == request.auth.uid;
+      allow get: if isSignedIn() && bookingOwnedByCurrentIdentity();
       allow list: if isSignedIn();
       allow update: if isSignedIn()
-        && resource.data.receipt.customer.uid == request.auth.uid
+        && bookingOwnedByCurrentIdentity()
         && request.resource.data.diff(resource.data).changedKeys().hasOnly([
           'status',
           'cancelledAt',

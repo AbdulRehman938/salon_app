@@ -9,6 +9,7 @@ import '../widgets/dashboard_search_bar.dart';
 import '../widgets/salon_card.dart';
 import '../widgets/service_pill.dart';
 import 'bookings_page.dart';
+import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'salon_detail_page.dart';
 import 'search_location_page.dart';
@@ -26,6 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedServiceIndex = 0;
   int _selectedNavIndex = 0;
   String _selectedLocation = 'No location';
+  String _headerUserName = 'Guest';
   final AuthService _authService = AuthService();
   final SalonDataService _salonDataService = SalonDataService();
   final TextEditingController _citySearchController = TextEditingController();
@@ -49,10 +51,25 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _initializeDashboard() async {
+    await _loadHeaderUserName();
     await _salonDataService.ensureSeeded();
     await _loadLocationOptionsFromDatabase();
     await _loadServicesFromDatabase();
     await _loadSalonsFromDatabase();
+  }
+
+  Future<void> _loadHeaderUserName() async {
+    final name = (await _authService.getCurrentUserDisplayNameFromProfile())
+        ?.trim();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _headerUserName = (name == null || name.isEmpty)
+          ? 'Guest'
+          : name.replaceAll(RegExp(r'\s+'), ' ');
+    });
   }
 
   Future<void> _loadServicesFromDatabase() async {
@@ -294,6 +311,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Expanded(
                           child: DashboardHeader(
+                            userDisplayName: _headerUserName,
                             locationLabel: _selectedLocation,
                             onLocationTap: _toggleCityDropdown,
                           ),
@@ -575,15 +593,22 @@ class _DashboardPageState extends State<DashboardPage> {
                   return;
                 }
 
+                if (index == 2) {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FavoritesPage()),
+                  );
+                  if (!mounted) {
+                    return;
+                  }
+                  setState(() {
+                    _selectedNavIndex = 0;
+                  });
+                  return;
+                }
+
                 setState(() {
                   _selectedNavIndex = index;
                 });
-
-                if (index > 1) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('This tab is coming soon.')),
-                  );
-                }
               },
             ),
           ],

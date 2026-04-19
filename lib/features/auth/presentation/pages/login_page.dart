@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/country_phone_data.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/country_service.dart';
+import 'signup_page.dart';
 import 'verify_identity_page.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../dashboard/presentation/pages/dashboard_page.dart';
@@ -469,7 +470,7 @@ class _LoginPageState extends State<LoginPage> {
         : '${_selectedCountry!.flag} ${_selectedCountry!.dialCode}';
 
     return GestureDetector(
-      onTap: () => _pickCountry(countries),
+      onTap: _isSubmitting ? null : () => _pickCountry(countries),
       child: Container(
         margin: const EdgeInsets.only(left: 10, right: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -556,57 +557,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _continueWithApple() async {
-    if (_isSubmitting) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      final credential = await _authService.signInWithApple();
-      if (credential?.user == null || !mounted) {
-        return;
-      }
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      final message = switch (e.code) {
-        'apple-not-available' =>
-          'Apple sign-in is not available on this device.',
-        'apple-not-configured' =>
-          'Apple sign-in setup is incomplete. Configure APPLE_SERVICE_ID and APPLE_REDIRECT_URI.',
-        _ => e.message ?? 'Apple sign-in failed.',
-      };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: AppColors.errorRed),
-      );
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Apple sign-in failed: $e'),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
-    }
-  }
-
   Widget _socialButton({
     required String title,
     required Color background,
@@ -621,6 +571,8 @@ class _LoginPageState extends State<LoginPage> {
           elevation: 0,
           backgroundColor: background,
           foregroundColor: foreground,
+          disabledBackgroundColor: background,
+          disabledForegroundColor: foreground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -721,7 +673,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Align(
                           alignment: Alignment.bottomCenter,
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -731,124 +683,264 @@ class _LoginPageState extends State<LoginPage> {
                                     'Book Your Perfect\nLook in Minutes!',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 46,
+                                      fontSize: 40,
                                       fontWeight: FontWeight.w800,
-                                      height: 1.1,
+                                      height: 1.05,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                SizedBox(
-                                  height: 24,
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      _identifierError(),
-                                      style: const TextStyle(
-                                        color: AppColors.errorRed,
-                                        fontWeight: FontWeight.w600,
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    14,
+                                    16,
+                                    14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFDFEFF),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: const Color(0xFFD7DEED),
+                                      width: 1,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x260B0C15),
+                                        blurRadius: 18,
+                                        offset: Offset(0, 8),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                                ReactiveTextField<String>(
-                                  formControlName: 'identifier',
-                                  showErrors: (_) => false,
-                                  keyboardType: TextInputType.text,
-                                  textInputAction: TextInputAction.done,
-                                  style: const TextStyle(
-                                    color: AppColors.dark2,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'Enter your email or phone number.',
-                                    hintStyle: const TextStyle(
-                                      color: AppColors.gray1,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    prefixIcon: _isPhoneMode
-                                        ? _buildCountryPrefix(countries)
-                                        : null,
-                                    prefixIconConstraints: const BoxConstraints(
-                                      minHeight: 0,
-                                      minWidth: 0,
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 16,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                                if (_countryError().isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _countryError(),
-                                    style: const TextStyle(
-                                      color: AppColors.errorRed,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 14),
-                                SizedBox(
-                                  height: 56,
-                                  child: ReactiveFormConsumer(
-                                    builder: (context, form, _) =>
-                                        ElevatedButton(
-                                          onPressed: _isSubmitting
-                                              ? null
-                                              : () => _continue(form),
-                                          style: ElevatedButton.styleFrom(
-                                            elevation: 0,
-                                            backgroundColor: AppColors.main,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      SizedBox(
+                                        height: 18,
+                                        child: Align(
+                                          alignment: Alignment.topLeft,
+                                          child: Text(
+                                            _identifierError(),
+                                            style: const TextStyle(
+                                              color: AppColors.errorRed,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
                                             ),
                                           ),
-                                          child: _isSubmitting
-                                              ? const SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                        strokeWidth: 2,
-                                                      ),
-                                                )
-                                              : const Text(
-                                                  'Continue',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      ReactiveTextField<String>(
+                                        formControlName: 'identifier',
+                                        showErrors: (_) => false,
+                                        readOnly: _isSubmitting,
+                                        keyboardType: TextInputType.text,
+                                        textInputAction: TextInputAction.done,
+                                        style: const TextStyle(
+                                          color: AppColors.dark2,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 16,
+                                        ),
+                                        decoration: InputDecoration(
+                                          labelText: 'Email or Phone Number',
+                                          floatingLabelBehavior:
+                                              FloatingLabelBehavior.always,
+                                          labelStyle: const TextStyle(
+                                            color: AppColors.gray1,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          floatingLabelStyle: const TextStyle(
+                                            color: AppColors.dark1,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          hintText:
+                                              'Enter your email or phone number',
+                                          hintStyle: const TextStyle(
+                                            color: AppColors.gray1,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          prefixIcon: _isPhoneMode
+                                              ? _buildCountryPrefix(countries)
+                                              : null,
+                                          prefixIconConstraints:
+                                              const BoxConstraints(
+                                                minHeight: 0,
+                                                minWidth: 0,
+                                              ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 14,
+                                                vertical: 18,
+                                              ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFD4DBEA),
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFD4DBEA),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.main,
+                                              width: 1.6,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_countryError().isNotEmpty) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _countryError(),
+                                          style: const TextStyle(
+                                            color: AppColors.errorRed,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Wrap(
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          spacing: 4,
+                                          children: [
+                                            const Text(
+                                              "Don't have an account?",
+                                              style: TextStyle(
+                                                color: Color(0xFF5F6880),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: _isSubmitting
+                                                  ? null
+                                                  : () async {
+                                                      await Navigator.of(
+                                                        context,
+                                                      ).push(
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              const SignupPage(),
+                                                        ),
+                                                      );
+                                                    },
+                                              style: TextButton.styleFrom(
+                                                minimumSize: Size.zero,
+                                                tapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 2,
+                                                      vertical: 0,
+                                                    ),
+                                                foregroundColor: AppColors.main,
+                                              ),
+                                              child: const Text(
+                                                'Create account',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  decoration:
+                                                      TextDecoration.underline,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        height: 56,
+                                        child: ReactiveFormConsumer(
+                                          builder: (context, form, _) =>
+                                              ElevatedButton(
+                                                onPressed: _isSubmitting
+                                                    ? null
+                                                    : () => _continue(form),
+                                                style: ElevatedButton.styleFrom(
+                                                  elevation: 0,
+                                                  backgroundColor:
+                                                      AppColors.main,
+                                                  foregroundColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
                                                 ),
+                                                child: _isSubmitting
+                                                    ? const Text(
+                                                        'Logging In ...',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      )
+                                                    : const Text(
+                                                        'Continue',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                              ),
                                         ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  'Or',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                _socialButton(
-                                  title: 'Continue with Apple',
-                                  background: AppColors.dark1,
-                                  foreground: Colors.white,
-                                  iconPath: 'assets/apple_icon.png',
-                                  onPressed: _continueWithApple,
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Divider(
+                                        color: Color(0x9FFFFFFF),
+                                        thickness: 1,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      child: Text(
+                                        'Or',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.95,
+                                          ),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    const Expanded(
+                                      child: Divider(
+                                        color: Color(0x9FFFFFFF),
+                                        thickness: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 10),
                                 _socialButton(

@@ -30,9 +30,11 @@ class StylistSelectionPage extends StatefulWidget {
 class _StylistSelectionPageState extends State<StylistSelectionPage> {
   final BookingSelectionService _bookingSelectionService =
       BookingSelectionService();
+  static const int _maxMultiStylists = 5;
 
   String? _selectedMode;
   int? _selectedStylistIndex;
+  final Set<int> _selectedStylistIndices = <int>{};
 
   static const List<String> _stylistImages = <String>[
     'assets/stylists/image.png',
@@ -41,8 +43,14 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
     'assets/stylists/image_3.png',
   ];
 
-  bool get _canContinue =>
-      _selectedMode != null || _selectedStylistIndex != null;
+  bool get _canContinue {
+    if (_selectedMode == 'multiple') {
+      return _selectedStylistIndices.isNotEmpty;
+    }
+    return _selectedMode != null || _selectedStylistIndex != null;
+  }
+
+  bool get _isInMultipleSelectionMode => _selectedMode == 'multiple';
 
   Future<void> _onContinueTap() async {
     if (!_canContinue) {
@@ -67,6 +75,13 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
       specialty: specialty,
     );
 
+    if (_isInMultipleSelectionMode && mounted) {
+      setState(() {
+        _selectedMode = null;
+        _selectedStylistIndices.clear();
+      });
+    }
+
     if (!mounted) {
       return;
     }
@@ -80,6 +95,45 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
           discountOffer: widget.discountOffer,
         ),
       ),
+    );
+  }
+
+  void _toggleStylistSelectionInMultipleMode(int index) {
+    if (_selectedStylistIndices.contains(index)) {
+      setState(() {
+        _selectedStylistIndices.remove(index);
+      });
+      return;
+    }
+
+    if (_selectedStylistIndices.length >= _maxMultiStylists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can select up to 5 stylists only.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedStylistIndices.add(index);
+    });
+  }
+
+  Widget _buildMultipleSelectionCheckbox(bool isSelected) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.main : Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isSelected ? AppColors.main : const Color(0xFFCFD4DD),
+          width: 1.4,
+        ),
+      ),
+      child: isSelected
+          ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+          : null,
     );
   }
 
@@ -153,14 +207,23 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
   }
 
   Widget _buildStylistTile(StylistData stylist, int index) {
-    final isSelected = _selectedStylistIndex == index;
+    final isInMultipleMode = _isInMultipleSelectionMode;
+    final isSelected = isInMultipleMode
+        ? _selectedStylistIndices.contains(index)
+        : _selectedStylistIndex == index;
     final imageAsset = _stylistImages[index % _stylistImages.length];
 
     return GestureDetector(
       onTap: () {
+        if (isInMultipleMode) {
+          _toggleStylistSelectionInMultipleMode(index);
+          return;
+        }
+
         setState(() {
           _selectedMode = null;
           _selectedStylistIndex = index;
+          _selectedStylistIndices.clear();
         });
       },
       child: Container(
@@ -176,6 +239,10 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
         ),
         child: Row(
           children: [
+            if (isInMultipleMode) ...[
+              _buildMultipleSelectionCheckbox(isSelected),
+              const SizedBox(width: 12),
+            ],
             ClipRRect(
               borderRadius: BorderRadius.circular(11),
               child: SizedBox(
@@ -269,16 +336,25 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
                       setState(() {
                         _selectedStylistIndex = null;
                         _selectedMode = 'any';
+                        _selectedStylistIndices.clear();
                       });
                     },
                   ),
                   _buildModeTile(
                     title: 'Multiple Stylists',
-                    subtitle: 'Choose per service',
+                    subtitle: _isInMultipleSelectionMode
+                        ? 'Select up to 5 (${_selectedStylistIndices.length}/5 selected)'
+                        : 'Choose up to 5 stylists',
                     imageAsset: 'assets/multiStylists.png',
-                    isSelected: _selectedMode == 'multiple',
+                    isSelected: _isInMultipleSelectionMode,
                     onTap: () {
                       setState(() {
+                        if (_isInMultipleSelectionMode) {
+                          _selectedMode = null;
+                          _selectedStylistIndices.clear();
+                          return;
+                        }
+
                         _selectedStylistIndex = null;
                         _selectedMode = 'multiple';
                       });
@@ -305,7 +381,7 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
                       height: 56,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.78),
+                        color: Colors.white.withValues(alpha: 0.78),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -358,9 +434,11 @@ class _StylistSelectionPageState extends State<StylistSelectionPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Select & Continue',
-                      style: TextStyle(
+                    child: Text(
+                      _isInMultipleSelectionMode
+                          ? 'Next Stylists'
+                          : 'Select & Continue',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),

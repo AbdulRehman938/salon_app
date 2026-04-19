@@ -548,6 +548,99 @@ class SalonDataService {
     }, SetOptions(merge: true));
   }
 
+  Future<List<String>> fetchFavoriteSalonIdsForCurrentUser() async {
+    final user = await _resolveCurrentUser();
+    if (user != null) {
+      final snapshot = await _firestore
+          .collection(_usersCollection)
+          .doc(user.uid)
+          .get();
+
+      final data = snapshot.data();
+      if (data == null) {
+        return const <String>[];
+      }
+
+      final rawFavorites = data['favoriteSalonIds'];
+      if (rawFavorites is! List) {
+        return const <String>[];
+      }
+
+      return rawFavorites
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+
+    final email = await _authService.getSessionVerifiedEmail();
+    if (email == null || email.isEmpty) {
+      return const <String>[];
+    }
+
+    final snapshot = await _firestore
+        .collection(_emailOtpCollection)
+        .doc(_emailDocId(email))
+        .get();
+
+    final data = snapshot.data();
+    if (data == null) {
+      return const <String>[];
+    }
+
+    final rawFavorites = data['favoriteSalonIds'];
+    if (rawFavorites is! List) {
+      return const <String>[];
+    }
+
+    return rawFavorites
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  Future<List<SalonCardData>> fetchFavoriteSalonsForCurrentUser() async {
+    final favoriteIds = await fetchFavoriteSalonIdsForCurrentUser();
+    if (favoriteIds.isEmpty) {
+      return const <SalonCardData>[];
+    }
+
+    final uniqueIds = favoriteIds.toSet();
+    final snapshot = await _firestore.collection(_collection).get();
+
+    final cardsById = <String, SalonCardData>{};
+    for (final doc in snapshot.docs) {
+      if (!uniqueIds.contains(doc.id)) {
+        continue;
+      }
+
+      final data = doc.data();
+      final rating = (data['rating'] as num?)?.toDouble() ?? 0;
+      final reviews = (data['reviews_count'] as num?)?.toInt() ?? 0;
+      final distance = (data['distance_km'] as num?)?.toDouble() ?? 0;
+      final cityValue = (data['city'] ?? '').toString();
+      final stateValue = (data['state'] ?? '').toString();
+
+      cardsById[doc.id] = SalonCardData(
+        salonId: doc.id,
+        name: (data['name'] ?? 'Unknown Salon').toString(),
+        distance: _formatDistance(distance),
+        location: '$cityValue, $stateValue',
+        rating: rating.toStringAsFixed(1),
+        reviews: reviews.toString(),
+        imageAsset: _salonImageAssets[_imageIndexForSalonId(doc.id)],
+      );
+    }
+
+    final ordered = <SalonCardData>[];
+    for (final id in favoriteIds) {
+      final card = cardsById[id];
+      if (card != null) {
+        ordered.add(card);
+      }
+    }
+    return ordered;
+  }
+
   Map<String, Object>? _seedSalonById(String salonId) {
     for (final salon in _seedSalons) {
       if ((salon['id'] ?? '').toString() == salonId) {

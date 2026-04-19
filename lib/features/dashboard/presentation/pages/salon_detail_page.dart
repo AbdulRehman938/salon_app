@@ -514,7 +514,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                           height: 56,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.78),
+                            color: Colors.white.withValues(alpha: 0.78),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(

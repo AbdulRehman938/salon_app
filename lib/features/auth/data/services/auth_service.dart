@@ -22,10 +22,10 @@ class AuthService {
   static String? _sessionVerifiedEmail;
   static const String _emailOtpCollection = 'emailOtpVerifications';
   static const String _usersCollection = 'users';
+  static const String _registeredEmailsCollection = 'registeredEmails';
   static const String _locationSearchCollection = 'locationSearchHistory';
   static const String _sessionVerifiedEmailKey = 'session_verified_email';
   static const Duration _defaultEmailOtpTtl = Duration(minutes: 5);
-  static const String _emailOtpPasswordPepper = 'salon_app_email_otp_v1';
 
   final String _brevoApiKey =
       (dotenv.env['BREVO_API_KEY'] ??
@@ -220,6 +220,15 @@ class AuthService {
       'updatedAt': now,
       if (!snapshot.exists) 'createdAt': now,
     }, SetOptions(merge: true));
+
+    final normalizedEmail = normalizeEmail(user.email ?? '');
+    if (normalizedEmail.isNotEmpty) {
+      await _markEmailAsRegistered(
+        normalizedEmail,
+        uid: user.uid,
+        source: loginMethod,
+      );
+    }
   }
 
   String _generateNonce([int length = 32]) {
@@ -236,13 +245,6 @@ class AuthService {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
-  }
-
-  String _emailOtpPassword(String normalizedEmail) {
-    final seed = '$normalizedEmail|$_emailOtpPasswordPepper';
-    // Deterministic strong password for email-OTP-backed auth sessions.
-    final hash = _sha256ofString(seed);
-    return 'S@${hash.substring(0, 30)}';
   }
 
   Future<User?> refreshCurrentUser() async {
@@ -291,6 +293,28 @@ class AuthService {
     );
 
     return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  Future<void> _markEmailAsRegistered(
+    String email, {
+    String? uid,
+    String source = 'unknown',
+  }) async {
+    final normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail.isEmpty) {
+      return;
+    }
+
+    await _firestore
+        .collection(_registeredEmailsCollection)
+        .doc(_emailDocId(normalizedEmail))
+        .set({
+          'email': normalizedEmail,
+          'uid': uid,
+          'source': source,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   Future<void> saveEmailOtp({
@@ -406,7 +430,21 @@ class AuthService {
             .doc(user.uid)
             .get();
         final data = snapshot.data();
-        return data != null && data['isVerified'] == true;
+        if (data != null && data['isVerified'] == true) {
+          return true;
+        }
+
+        // During verified-email bootstrap we may receive an auth state update
+        // before the anonymous user profile document is persisted.
+        final sessionEmail = await getSessionVerifiedEmail();
+        if (sessionEmail == null || sessionEmail.isEmpty) {
+          return false;
+        }
+
+        final sessionEmailVerified = await isEmailVerifiedInFirestore(
+          sessionEmail,
+        );
+        return sessionEmailVerified;
       }
 
       // Phone users do not have an email verification requirement.
@@ -589,6 +627,236 @@ class AuthService {
       if (!snapshot.exists) 'createdAt': now,
     }, SetOptions(merge: true));
 
+    await _markEmailAsRegistered(
+      normalizedEmail,
+      uid: user.uid,
+      source: 'email-otp-session',
+    );
+
     return user;
+  }
+
+  Future<User?> completeEmailSignupProfile({
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String city,
+    required String address,
+    required String gender,
+    String? profileImageBase64,
+  }) async {
+    final normalizedEmail = normalizeEmail(email);
+    final sanitizedFirstName = firstName.trim();
+    final sanitizedLastName = lastName.trim();
+    final displayName = '$sanitizedFirstName $sanitizedLastName'
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    final user = await ensureAuthenticatedSessionForVerifiedEmail(
+      normalizedEmail,
+    );
+    if (user == null) {
+      return null;
+    }
+
+    final now = FieldValue.serverTimestamp();
+    final userDoc = _firestore.collection(_usersCollection).doc(user.uid);
+
+    await userDoc.set({
+      'uid': user.uid,
+      'email': normalizedEmail,
+      'firstName': sanitizedFirstName,
+      'lastName': sanitizedLastName,
+      'phoneNumber': phoneNumber.trim(),
+      'city': city.trim(),
+      'address': address.trim(),
+      'gender': gender.trim(),
+      'displayName': displayName,
+      'profileImageBase64': profileImageBase64,
+      'isVerified': true,
+      'verifiedEmail': normalizedEmail,
+      'loginMethod': 'email-otp-session',
+      'updatedAt': now,
+      'lastLoginAt': now,
+      'createdAt': now,
+    }, SetOptions(merge: true));
+
+    await _markEmailAsRegistered(
+      normalizedEmail,
+      uid: user.uid,
+      source: 'email-signup',
+    );
+
+    try {
+      await user.updateDisplayName(displayName);
+    } catch (_) {
+      // Non-blocking: profile document is the source of truth for signup data.
+    }
+
+    return user;
+  }
+
+  Future<bool> isEmailAlreadyRegistered(String email) async {
+    final normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail.isEmpty) {
+      return false;
+    }
+
+    final registeredEmailSnapshot = await _firestore
+        .collection(_registeredEmailsCollection)
+        .doc(_emailDocId(normalizedEmail))
+        .get();
+    if (registeredEmailSnapshot.exists) {
+      return true;
+    }
+
+    final otpSnapshot = await _firestore
+        .collection(_emailOtpCollection)
+        .doc(_emailDocId(normalizedEmail))
+        .get();
+    final otpData = otpSnapshot.data();
+    return otpData?['isVerified'] == true;
+  }
+
+  Future<String?> getCurrentUserDisplayNameFromProfile() async {
+    final user = await refreshCurrentUser();
+    if (user == null) {
+      return null;
+    }
+
+    final snapshot = await _firestore
+        .collection(_usersCollection)
+        .doc(user.uid)
+        .get();
+    final data = snapshot.data();
+
+    final firstName = (data?['firstName'] ?? '').toString().trim();
+    final lastName = (data?['lastName'] ?? '').toString().trim();
+    final composedName = '$firstName $lastName'.trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+    if (composedName.isNotEmpty) {
+      return composedName;
+    }
+
+    final displayName = (data?['displayName'] ?? '').toString().trim();
+    if (displayName.isNotEmpty) {
+      return displayName;
+    }
+
+    final authName = (user.displayName ?? '').trim();
+    if (authName.isNotEmpty) {
+      return authName;
+    }
+
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getCurrentUserProfileData() async {
+    final user = await refreshCurrentUser();
+    if (user == null) {
+      return null;
+    }
+
+    final snapshot = await _firestore
+        .collection(_usersCollection)
+        .doc(user.uid)
+        .get();
+    return snapshot.data();
+  }
+
+  Future<void> updateCurrentUserProfileData({
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? gender,
+    String? address,
+    String? city,
+    String? profileImageBase64,
+  }) async {
+    final user = await refreshCurrentUser();
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-signed-in',
+        message: 'User is not signed in.',
+      );
+    }
+
+    final userDoc = _firestore.collection(_usersCollection).doc(user.uid);
+    final currentSnapshot = await userDoc.get();
+    final currentData = currentSnapshot.data() ?? <String, dynamic>{};
+
+    final nextFirstName = (firstName ?? currentData['firstName'] ?? '')
+        .toString()
+        .trim();
+    final nextLastName = (lastName ?? currentData['lastName'] ?? '')
+        .toString()
+        .trim();
+    final nextDisplayName = '$nextFirstName $nextLastName'.trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+
+    final payload = <String, dynamic>{
+      if (firstName case final value?) 'firstName': value.trim(),
+      if (lastName case final value?) 'lastName': value.trim(),
+      if (phoneNumber case final value?) 'phoneNumber': value.trim(),
+      if (gender case final value?) 'gender': value.trim(),
+      if (address case final value?) 'address': value.trim(),
+      if (city case final value?) 'city': value.trim(),
+      ...?profileImageBase64 == null
+          ? null
+          : <String, dynamic>{'profileImageBase64': profileImageBase64},
+      if (nextDisplayName.isNotEmpty) 'displayName': nextDisplayName,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    await userDoc.set(payload, SetOptions(merge: true));
+
+    if (nextDisplayName.isNotEmpty) {
+      try {
+        await user.updateDisplayName(nextDisplayName);
+      } catch (_) {
+        // Non-blocking: Firestore user doc is source of truth.
+      }
+    }
+  }
+
+  Future<void> updateCurrentUserEmailAfterOtp({
+    required String newEmail,
+  }) async {
+    final user = await refreshCurrentUser();
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-signed-in',
+        message: 'User is not signed in.',
+      );
+    }
+
+    final normalizedEmail = normalizeEmail(newEmail);
+    if (normalizedEmail.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'invalid-email',
+        message: 'Email is invalid.',
+      );
+    }
+
+    final userDoc = _firestore.collection(_usersCollection).doc(user.uid);
+    await userDoc.set({
+      'email': normalizedEmail,
+      'verifiedEmail': normalizedEmail,
+      'emailVerified': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'lastLoginAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await _markEmailAsRegistered(
+      normalizedEmail,
+      uid: user.uid,
+      source: 'profile-email-update',
+    );
+    await setSessionVerifiedEmail(normalizedEmail);
   }
 }

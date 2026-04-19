@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../data/services/booking_history_service.dart';
 import '../widgets/dashboard_bottom_nav.dart';
 import 'dashboard_page.dart';
+import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'receipt_page.dart';
 
@@ -20,16 +21,251 @@ class BookingsPage extends StatefulWidget {
 class _BookingsPageState extends State<BookingsPage> {
   final BookingHistoryService _bookingHistoryService = BookingHistoryService();
   BookingHistoryTab _selectedTab = BookingHistoryTab.upcoming;
+  bool _isCancellingBooking = false;
+
+  Future<void> _onCancelPressed(BookingHistoryItem item) async {
+    if (_isCancellingBooking) {
+      return;
+    }
+
+    final shouldCancel = await _showCancelBookingSheet();
+    if (!mounted || shouldCancel != true) {
+      return;
+    }
+
+    await _cancelBooking(item);
+  }
+
+  Future<bool?> _showCancelBookingSheet() {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: false,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF4F4F4),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD3D3D3),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Cancel Booking',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.dark1,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to cancel?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.dark1,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Canceling your appointment will remove it\nfrom your upcoming bookings.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF6A6A6A),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(true),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.main, width: 1.2),
+                      backgroundColor: const Color(0xFFEFEFEF),
+                      foregroundColor: AppColors.main,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Yes, Cancel Booking',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(false),
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: AppColors.main,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Keep Appointment',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showCancelSuccessDialog() async {
+    await showGeneralDialog<void>(
+      context: context,
+      barrierLabel: 'cancel-success',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 360,
+              margin: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.fromLTRB(18, 26, 18, 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F3F3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      color: AppColors.main,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 42,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Booking Canceled',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.dark1,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Your appointment has been successfully\ncanceled.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF8A8A8A),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        if (!mounted) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedTab = BookingHistoryTab.upcoming;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: AppColors.main,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Back to Bookings',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+        final scale = Tween<double>(begin: 0.92, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+        );
+        return FadeTransition(
+          opacity: fade,
+          child: ScaleTransition(scale: scale, child: child),
+        );
+      },
+    );
+  }
 
   Future<void> _cancelBooking(BookingHistoryItem item) async {
+    setState(() {
+      _isCancellingBooking = true;
+    });
+
     try {
       await _bookingHistoryService.cancelBooking(bookingId: item.bookingId);
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Booking cancelled.')));
+
+      await _showCancelSuccessDialog();
     } catch (error) {
       if (!mounted) {
         return;
@@ -37,16 +273,23 @@ class _BookingsPageState extends State<BookingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Unable to cancel booking: $error')),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCancellingBooking = false;
+        });
+      }
     }
   }
 
   Future<void> _submitReview(BookingHistoryItem item) async {
     final alreadyReviewed = await _bookingHistoryService
         .hasSubmittedReviewForBooking(item.bookingId);
+    if (!mounted) {
+      return;
+    }
+
     if (alreadyReviewed) {
-      if (!mounted) {
-        return;
-      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('You already submitted a review for this booking.'),
@@ -231,9 +474,13 @@ class _BookingsPageState extends State<BookingsPage> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('This tab is coming soon.')));
+    if (index == 2) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const FavoritesPage()),
+        (route) => false,
+      );
+      return;
+    }
   }
 
   List<BookingHistoryItem> _itemsForTab(List<BookingHistoryItem> allItems) {
@@ -295,7 +542,7 @@ class _BookingsPageState extends State<BookingsPage> {
 
                         return ListView.separated(
                           itemCount: items.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final item = items[index];
@@ -305,7 +552,7 @@ class _BookingsPageState extends State<BookingsPage> {
                             return _BookingCard(
                               item: item,
                               onCancel: item.canCancel
-                                  ? () => _cancelBooking(item)
+                                  ? () => _onCancelPressed(item)
                                   : null,
                               onViewReceipt: () {
                                 Navigator.of(context).push(
@@ -339,7 +586,7 @@ class _BookingsPageState extends State<BookingsPage> {
                       height: 56,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.78),
+                        color: Colors.white.withValues(alpha: 0.78),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(

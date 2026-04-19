@@ -4,10 +4,12 @@ import '../../../../core/theme/app_colors.dart';
 class DashboardHeader extends StatelessWidget {
   const DashboardHeader({
     super.key,
+    required this.userDisplayName,
     required this.locationLabel,
     required this.onLocationTap,
   });
 
+  final String userDisplayName;
   final String locationLabel;
   final VoidCallback onLocationTap;
 
@@ -50,8 +52,17 @@ class DashboardHeader extends StatelessWidget {
                           'Location',
                           style: TextStyle(
                             color: AppColors.gray1,
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Hi, ${userDisplayName.trim().isEmpty ? 'Guest' : userDisplayName.trim()}',
+                          style: TextStyle(
+                            color: AppColors.gray1,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 3),
