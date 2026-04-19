@@ -74,9 +74,15 @@ class _DashboardPageState extends State<DashboardPage> {
       if (placemarks.isNotEmpty) {
         final city = placemarks.first.locality ?? '';
         final state = placemarks.first.administrativeArea ?? '';
-        final location = city.isNotEmpty && state.isNotEmpty
-            ? '$city, $state'
-            : '';
+        String location = '';
+        if (city.isNotEmpty && state.isNotEmpty) {
+          location = '$city, $state';
+        } else if (city.isNotEmpty) {
+          location = city;
+        } else if (state.isNotEmpty) {
+          location = state;
+        }
+        print('GEOLOCATION: city=[32m$city[0m, state=[32m$state[0m, location=[32m$location[0m');
         if (location.isNotEmpty) {
           setState(() {
             _selectedLocation = location;
@@ -85,8 +91,8 @@ class _DashboardPageState extends State<DashboardPage> {
           await _loadSalonsFromDatabase();
         }
       }
-    } catch (_) {
-      // Ignore geolocation errors
+    } catch (e) {
+      print('Geolocation error: $e');
     }
   }
 
