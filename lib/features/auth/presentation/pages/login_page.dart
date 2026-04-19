@@ -36,6 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   final _countryService = CountryService();
   final _authService = AuthService();
   late final Future<List<CountryPhoneData>> _countriesFuture;
+  StreamSubscription<Object?>? _authStateSub;
 
   bool _isPhoneMode = false;
   bool _isSubmitting = false;
@@ -88,6 +89,21 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _authStateSub = _authService.authStateChanges().listen((_) async {
+      if (!mounted) {
+        return;
+      }
+
+      final allowed = await _authService.isCurrentUserAllowed();
+      if (!mounted || !allowed) {
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
+      );
+    });
+
     _countriesFuture = _countryService.fetchCountries().then((countries) {
       if (!mounted || countries.isEmpty) {
         return countries;
@@ -140,6 +156,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _authStateSub?.cancel();
     _form.dispose();
     super.dispose();
   }
@@ -524,9 +541,14 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final credential = await _authService.signInWithGoogle();
-      if (credential?.user == null || !mounted) {
+      if (!mounted) {
         return;
       }
+
+      if (credential?.user == null) {
+        return;
+      }
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardPage()),
       );

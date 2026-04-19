@@ -410,6 +410,11 @@ class AuthService {
 
       return isEmailVerifiedInFirestore(user.email!);
     } catch (_) {
+      final current = _auth.currentUser;
+      if (current != null && !current.isAnonymous) {
+        return true;
+      }
+
       final email = await getSessionVerifiedEmail();
       return email != null && email.isNotEmpty;
     }
