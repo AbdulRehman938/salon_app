@@ -105,9 +105,8 @@ class AuthService {
       final provider = GoogleAuthProvider()
         ..addScope('email')
         ..setCustomParameters({'prompt': 'select_account'});
-      final userCredential = await _auth.signInWithPopup(provider);
-      await upsertUserProfile(userCredential.user, loginMethod: 'google');
-      return userCredential;
+      await _auth.signInWithRedirect(provider);
+      return null;
     }
 
     final googleSignIn = _googleSignIn;
@@ -132,6 +131,17 @@ class AuthService {
     final userCredential = await _auth.signInWithCredential(credential);
     await upsertUserProfile(userCredential.user, loginMethod: 'google');
     return userCredential;
+  }
+
+  Future<void> handlePendingWebRedirectSignIn() async {
+    if (!kIsWeb) {
+      return;
+    }
+
+    final credential = await _auth.getRedirectResult();
+    if (credential.user != null) {
+      await upsertUserProfile(credential.user, loginMethod: 'google');
+    }
   }
 
   Future<void> upsertUserProfile(
@@ -379,6 +389,22 @@ class AuthService {
 
       // Phone users do not have an email verification requirement.
       if (user.email == null || user.email!.isEmpty) {
+        return true;
+      }
+
+      final providers = user.providerData
+          .map((provider) => provider.providerId)
+          .toSet();
+      if (providers.contains('google.com')) {
+        return true;
+      }
+
+      final profileSnapshot = await _firestore
+          .collection(_usersCollection)
+          .doc(user.uid)
+          .get();
+      final profileData = profileSnapshot.data();
+      if (profileData != null && profileData['isVerified'] == true) {
         return true;
       }
 

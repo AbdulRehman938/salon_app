@@ -19,6 +19,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    _completePendingWebRedirectSignIn();
     Future<void>.delayed(const Duration(seconds: 1), () {
       if (!mounted) {
         return;
@@ -27,6 +28,18 @@ class _SplashPageState extends State<SplashPage> {
         _openShutter = true;
       });
     });
+  }
+
+  Future<void> _completePendingWebRedirectSignIn() async {
+    try {
+      await _authService.handlePendingWebRedirectSignIn();
+    } catch (_) {
+      // Ignore here and let existing login flow handle surfaced auth errors.
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
