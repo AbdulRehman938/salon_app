@@ -51,7 +51,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _initializeDashboard();
-    _trySetCurrentLocation();
+    // _trySetCurrentLocation(); // REMOVE from here
   }
 
   Future<void> _trySetCurrentLocation() async {
@@ -152,6 +152,8 @@ class _DashboardPageState extends State<DashboardPage> {
         _selectedLocation = _allLocationOptions.first;
       }
     });
+    // Call geolocation after options are loaded
+    await _trySetCurrentLocation();
   }
 
   Future<void> _openLocationSearch() async {
