@@ -13,6 +13,8 @@ import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'salon_detail_page.dart';
 import 'search_location_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -40,6 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, List<String>> _citiesByState = <String, List<String>>{};
   List<String> _allLocationOptions = <String>[];
   bool _isSalonsLoading = true;
+  bool _triedGeolocate = false;
 
   List<String> _services = <String>[_allServicesLabel];
   List<SalonCardData> _salons = <SalonCardData>[];
@@ -48,6 +51,43 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _initializeDashboard();
+    _trySetCurrentLocation();
+  }
+
+  Future<void> _trySetCurrentLocation() async {
+    if (_triedGeolocate) return;
+    _triedGeolocate = true;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+      final position = await Geolocator.getCurrentPosition();
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final city = placemarks.first.locality ?? '';
+        final state = placemarks.first.administrativeArea ?? '';
+        final location = city.isNotEmpty && state.isNotEmpty
+            ? '$city, $state'
+            : '';
+        if (location.isNotEmpty && _allLocationOptions.contains(location)) {
+          setState(() {
+            _selectedLocation = location;
+          });
+          await _loadServicesFromDatabase();
+          await _loadSalonsFromDatabase();
+        }
+      }
+    } catch (_) {
+      // Ignore geolocation errors
+    }
   }
 
   Future<void> _initializeDashboard() async {
@@ -535,7 +575,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             SizedBox(height: 8),
                             Text(
-                              'No salons found for this location.',
+                              'No salons found for your current location.',
                               style: TextStyle(
                                 color: AppColors.dark1,
                                 fontWeight: FontWeight.w600,
@@ -543,7 +583,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Try another city/state from the search or location dropdown.',
+                              'You can select other cities using the top search bar.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: AppColors.gray1,
