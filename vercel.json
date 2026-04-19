@@ -33,7 +33,11 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!_vercel|.*\\..*).*)",
+      "source": "/__/auth/(.*)",
+      "destination": "https://salonapp-3ba4c.firebaseapp.com/__/auth/$1"
+    },
+    {
+      "source": "/((?!_vercel|__|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]

@@ -18,7 +18,24 @@ Future<void> main() async {
   } else {
     await dotenv.load(fileName: '.env', isOptional: true);
   }
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (kIsWeb) {
+    final webDefaults = DefaultFirebaseOptions.web;
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: webDefaults.apiKey,
+        appId: webDefaults.appId,
+        messagingSenderId: webDefaults.messagingSenderId,
+        projectId: webDefaults.projectId,
+        authDomain: Uri.base.host,
+        storageBucket: webDefaults.storageBucket,
+        measurementId: webDefaults.measurementId,
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   runApp(const MyApp());
 }
 
