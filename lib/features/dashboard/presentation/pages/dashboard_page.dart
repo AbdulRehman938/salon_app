@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../auth/data/services/auth_service.dart';
 import '../../data/services/salon_data_service.dart';
@@ -13,8 +14,8 @@ import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'salon_detail_page.dart';
 import 'search_location_page.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -54,32 +55,32 @@ class _DashboardPageState extends State<DashboardPage> {
     // _trySetCurrentLocation(); // REMOVE from here
   }
 
-  Future<void> _trySetCurrentLocation() async {
+  /// Detects the user's city and region via IP geolocation (geoapi.info).
+  /// Shows a SnackBar on network or API errors.
+  Future<void> _trySetLocationFromIp() async {
     if (_triedGeolocate) return;
     _triedGeolocate = true;
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) return;
-      }
-      if (permission == LocationPermission.deniedForever) return;
-      final position = await Geolocator.getCurrentPosition();
-      // position is never null in Dart null safety
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      // placemarks is never null in Dart null safety
-      if (placemarks.isEmpty) {
-        // ignore: avoid_print
-        print('Geolocation error: Placemarks is empty');
+      final response = await http
+          .get(Uri.parse('https://geoapi.info/api/geo'))
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode != 200) {
+        _showLocationError(
+          'Could not detect location (server error ${response.statusCode}).'
+          ' Please select your city manually.',
+        );
         return;
       }
-      final city = placemarks.first.locality ?? '';
-      final state = placemarks.first.administrativeArea ?? '';
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final geoLocation = data['location'] as Map<String, dynamic>? ?? {};
+      final city = (geoLocation['city'] as String? ?? '').trim();
+      final state = (geoLocation['region'] as String? ?? '').trim();
+
+      // ignore: avoid_print
+      print('IP-GEO: city=$city, state=$state');
+
       String location = '';
       if (city.isNotEmpty && state.isNotEmpty) {
         location = '$city, $state';
@@ -88,19 +89,52 @@ class _DashboardPageState extends State<DashboardPage> {
       } else if (state.isNotEmpty) {
         location = state;
       }
-      // ignore: avoid_print
-      print('GEOLOCATION: city=$city, state=$state, location=$location');
-      if (location.isNotEmpty) {
+
+      if (location.isNotEmpty && mounted) {
         setState(() {
           _selectedLocation = location;
         });
         await _loadServicesFromDatabase();
         await _loadSalonsFromDatabase();
       }
+    } on TimeoutException {
+      _showLocationError(
+        'Network timeout. Could not detect your location.'
+        ' Please check your internet connection.',
+      );
     } catch (e) {
       // ignore: avoid_print
-      print('Geolocation error: $e');
+      print('IP-GEO error: $e');
+      _showLocationError(
+        'Network error. Could not detect your location.'
+        ' Please check your internet connection.',
+      );
     }
+  }
+
+  void _showLocationError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 5),
+      ),
+    );
   }
 
   Future<void> _initializeDashboard() async {
@@ -163,8 +197,8 @@ class _DashboardPageState extends State<DashboardPage> {
       // Remove fallback: do not set _selectedLocation to first city
       // Do not change _selectedLocation here
     });
-    // Call geolocation after options are loaded
-    await _trySetCurrentLocation();
+    // Detect location via IP after options are loaded
+    await _trySetLocationFromIp();
   }
 
   Future<void> _openLocationSearch() async {
