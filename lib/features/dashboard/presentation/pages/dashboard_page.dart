@@ -16,6 +16,7 @@ import 'salon_detail_page.dart';
 import 'search_location_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dashboard_map_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -24,7 +25,8 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with SingleTickerProviderStateMixin {
   static const String _allServicesLabel = 'All Services';
 
   int _selectedServiceIndex = 0;
@@ -36,6 +38,8 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _citySearchController = TextEditingController();
 
   bool _isCityDropdownOpen = false;
+  late final AnimationController _dropdownController;
+  late final Animation<Offset> _dropdownOffset;
   bool _isCityLoading = false;
   String _cityFilter = '';
   String _selectedState = '';
@@ -51,6 +55,17 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _dropdownController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _dropdownOffset =
+        Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _dropdownController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _initializeDashboard();
     // _trySetCurrentLocation(); // REMOVE from here
   }
@@ -78,8 +93,6 @@ class _DashboardPageState extends State<DashboardPage> {
       final city = (geoLocation['city'] as String? ?? '').trim();
       final state = (geoLocation['region'] as String? ?? '').trim();
 
-      // ignore: avoid_print
-      print('IP-GEO: city=$city, state=$state');
 
       String location = '';
       if (city.isNotEmpty && state.isNotEmpty) {
@@ -103,8 +116,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ' Please check your internet connection.',
       );
     } catch (e) {
-      // ignore: avoid_print
-      print('IP-GEO error: $e');
       _showLocationError(
         'Network error. Could not detect your location.'
         ' Please check your internet connection.',
@@ -179,6 +190,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
+    _dropdownController.dispose();
     _citySearchController.dispose();
     super.dispose();
   }
@@ -194,10 +206,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _citiesByState = byState;
       _allLocationOptions = options;
-      // Remove fallback: do not set _selectedLocation to first city
-      // Do not change _selectedLocation here
     });
-    // Detect location via IP after options are loaded
     await _trySetLocationFromIp();
   }
 
@@ -324,6 +333,7 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         _isCityDropdownOpen = false;
       });
+      await _dropdownController.reverse();
       return;
     }
 
@@ -347,6 +357,7 @@ class _DashboardPageState extends State<DashboardPage> {
     });
 
     _citySearchController.clear();
+    await _dropdownController.forward();
   }
 
   List<String> get _filteredCities {
@@ -386,318 +397,378 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DashboardHeader(
-                            userDisplayName: _headerUserName,
-                            locationLabel: _selectedLocation,
-                            onLocationTap: _toggleCityDropdown,
+            // Main content
+            Positioned.fill(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DashboardHeader(
+                                  userDisplayName: _headerUserName,
+                                  locationLabel: _selectedLocation,
+                                  onLocationTap: _toggleCityDropdown,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      child: _isCityDropdownOpen
-                          ? Container(
-                              key: const ValueKey<String>('city-dropdown'),
-                              margin: const EdgeInsets.only(top: 10),
-                              padding: const EdgeInsets.fromLTRB(
-                                12,
-                                12,
-                                12,
-                                10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x1F000000),
-                                    blurRadius: 14,
-                                    offset: Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    height: 42,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F1F1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.search_rounded,
-                                          color: AppColors.gray1,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: TextField(
-                                            controller: _citySearchController,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _cityFilter = value;
-                                              });
-                                            },
-                                            decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText:
-                                                  'Search city in $_selectedState',
-                                              hintStyle: const TextStyle(
-                                                color: AppColors.gray1,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  if (_isCityLoading)
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    )
-                                  else if (_filteredCities.isEmpty)
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      child: Text(
-                                        'No cities found for this state.',
-                                        style: TextStyle(
-                                          color: AppColors.gray1,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    )
-                                  else
-                                    ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxHeight: 220,
-                                      ),
-                                      child: ListView.separated(
-                                        shrinkWrap: true,
-                                        itemCount: _filteredCities.length,
-                                        separatorBuilder: (_, index) =>
-                                            const Divider(
-                                              height: 1,
-                                              color: Color(0xFFE9E9E9),
-                                            ),
-                                        itemBuilder: (context, index) {
-                                          final city = _filteredCities[index];
-                                          return ListTile(
-                                            dense: true,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 4,
-                                                ),
-                                            title: Text(
-                                              city,
-                                              style: const TextStyle(
-                                                color: AppColors.dark1,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            onTap: () =>
-                                                _selectCityFromDropdown(city),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: 14),
-                    DashboardSearchBar(onTap: _openLocationSearch),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'Services',
-                      style: TextStyle(
-                        color: AppColors.dark1,
-                        fontSize: 31 / 2,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List<Widget>.generate(_services.length, (i) {
-                          final service = _services[i];
-                          return ServicePill(
-                            label: service,
-                            icon: _iconForService(service),
-                            isSelected: _selectedServiceIndex == i,
-                            onTap: () async {
-                              if (_selectedServiceIndex == i) {
-                                return;
-                              }
-                              setState(() {
-                                _selectedServiceIndex = i;
-                              });
-                              await _loadSalonsFromDatabase();
-                            },
-                          );
-                        }),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Nearby Salons',
+                          const SizedBox(height: 14),
+                          DashboardSearchBar(onTap: _openLocationSearch),
+                          const SizedBox(height: 18),
+                          const Text(
+                            'Services',
                             style: TextStyle(
                               color: AppColors.dark1,
                               fontSize: 31 / 2,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {},
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.main,
-                            padding: EdgeInsets.zero,
+                          const SizedBox(height: 10),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: List<Widget>.generate(
+                                _services.length,
+                                (i) {
+                                  final service = _services[i];
+                                  return ServicePill(
+                                    label: service,
+                                    icon: _iconForService(service),
+                                    isSelected: _selectedServiceIndex == i,
+                                    onTap: () async {
+                                      if (_selectedServiceIndex == i) {
+                                        return;
+                                      }
+                                      setState(() {
+                                        _selectedServiceIndex = i;
+                                      });
+                                      await _loadSalonsFromDatabase();
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                          icon: const Icon(Icons.map_outlined, size: 18),
-                          label: const Text(
-                            'View on Map',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Nearby Salons',
+                                  style: TextStyle(
+                                    color: AppColors.dark1,
+                                    fontSize: 31 / 2,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () async {
+                                  final allSalons = await _salonDataService
+                                      .fetchSalons();
+                                  if (!mounted) return;
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => DashboardMapPage(
+                                        initialLocation: _selectedLocation,
+                                        salons: allSalons,
+                                        citiesByState: _citiesByState,
+                                        onLocationChanged: (newLoc) async {
+                                          await _authService.saveLocationSearch(selectedLocation: newLoc);
+                                          if (!mounted) return;
+                                          setState(() {
+                                            _selectedLocation = newLoc;
+                                          });
+                                          await _loadServicesFromDatabase();
+                                          await _loadSalonsFromDatabase();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.main,
+                                  padding: EdgeInsets.zero,
+                                ),
+                                icon: const Icon(Icons.map_outlined, size: 18),
+                                label: const Text(
+                                  'View on Map',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                          if (_isSalonsLoading)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (_salons.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 22,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Icon(
+                                    Icons.storefront_outlined,
+                                    size: 28,
+                                    color: AppColors.gray1,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No salons found for your current location.',
+                                    style: TextStyle(
+                                      color: AppColors.dark1,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'You can select other cities using the top search bar.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.gray1,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ..._salons.map(
+                              (salon) => SalonCard(
+                                salon: salon,
+                                onTap: () => _openSalonDetail(salon),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DashboardBottomNav(
+                    selectedIndex: _selectedNavIndex,
+                    onChanged: (index) async {
+                      if (index == 1) {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const BookingsPage(),
+                          ),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedNavIndex = 0;
+                        });
+                        return;
+                      }
+
+                      if (index == 3) {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ProfilePage(),
+                          ),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedNavIndex = 0;
+                        });
+                        return;
+                      }
+
+                      if (index == 2) {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const FavoritesPage(),
+                          ),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedNavIndex = 0;
+                        });
+                        return;
+                      }
+
+                      setState(() {
+                        _selectedNavIndex = index;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            // Dropdown overlay with outside tap detection and close button
+            if (_isCityDropdownOpen) ...[
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () async {
+                    // Close dropdown when tapping outside
+                    if (_isCityDropdownOpen) {
+                      setState(() {
+                        _isCityDropdownOpen = false;
+                      });
+                      await _dropdownController.reverse();
+                    }
+                  },
+                  behavior: HitTestBehavior.translucent,
+                  child: Container(),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                child: SlideTransition(
+                  position: _dropdownOffset,
+                  child: Container(
+                    key: const ValueKey<String>('city-dropdown'),
+                    margin: const EdgeInsets.only(top: 0),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1F000000),
+                          blurRadius: 14,
+                          offset: Offset(0, 8),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    if (_isSalonsLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else if (_salons.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 22,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Column(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              Icons.storefront_outlined,
-                              size: 28,
-                              color: AppColors.gray1,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'No salons found for your current location.',
-                              style: TextStyle(
-                                color: AppColors.dark1,
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Container(
+                                height: 42,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F1F1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.search_rounded,
+                                      color: AppColors.gray1,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _citySearchController,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _cityFilter = value;
+                                          });
+                                        },
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText:
+                                              'Search city in $_selectedState',
+                                          hintStyle: const TextStyle(
+                                            color: AppColors.gray1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              'You can select other cities using the top search bar.',
-                              textAlign: TextAlign.center,
+                            IconButton(
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: AppColors.gray1,
+                              ),
+                              tooltip: 'Close',
+                              onPressed: () async {
+                                setState(() {
+                                  _isCityDropdownOpen = false;
+                                });
+                                await _dropdownController.reverse();
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (_isCityLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        else if (_filteredCities.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Text(
+                              'No cities found for this state.',
                               style: TextStyle(
                                 color: AppColors.gray1,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
-                        ),
-                      )
-                    else
-                      ..._salons.map(
-                        (salon) => SalonCard(
-                          salon: salon,
-                          onTap: () => _openSalonDetail(salon),
-                        ),
-                      ),
-                  ],
+                          )
+                        else
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 220),
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: _filteredCities.length,
+                              separatorBuilder: (_, index) => const Divider(
+                                height: 1,
+                                color: Color(0xFFE9E9E9),
+                              ),
+                              itemBuilder: (context, index) {
+                                final city = _filteredCities[index];
+                                return ListTile(
+                                  dense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  title: Text(
+                                    city,
+                                    style: const TextStyle(
+                                      color: AppColors.dark1,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  onTap: () => _selectCityFromDropdown(city),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            DashboardBottomNav(
-              selectedIndex: _selectedNavIndex,
-              onChanged: (index) async {
-                if (index == 1) {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const BookingsPage()),
-                  );
-                  if (!mounted) {
-                    return;
-                  }
-                  setState(() {
-                    _selectedNavIndex = 0;
-                  });
-                  return;
-                }
-
-                if (index == 3) {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfilePage()),
-                  );
-                  if (!mounted) {
-                    return;
-                  }
-                  setState(() {
-                    _selectedNavIndex = 0;
-                  });
-                  return;
-                }
-
-                if (index == 2) {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const FavoritesPage()),
-                  );
-                  if (!mounted) {
-                    return;
-                  }
-                  setState(() {
-                    _selectedNavIndex = 0;
-                  });
-                  return;
-                }
-
-                setState(() {
-                  _selectedNavIndex = index;
-                });
-              },
-            ),
+            ],
           ],
         ),
       ),

@@ -79,6 +79,8 @@ class SalonDataService {
       'rating': 4.7,
       'reviews_count': 6361,
       'distance_km': 1.5,
+      'lat': 31.5204,
+      'lng': 74.3587,
     },
     {
       'id': 'PK-PJ-002',
@@ -88,6 +90,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 2126,
       'distance_km': 3.2,
+      'lat': 31.5497,
+      'lng': 74.3436,
     },
     {
       'id': 'PK-PJ-003',
@@ -97,6 +101,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 1070,
       'distance_km': 0.8,
+      'lat': 31.4504,
+      'lng': 73.1350,
     },
     {
       'id': 'PK-PJ-004',
@@ -106,6 +112,8 @@ class SalonDataService {
       'rating': 4.9,
       'reviews_count': 354,
       'distance_km': 4.5,
+      'lat': 30.1575,
+      'lng': 71.5249,
     },
     {
       'id': 'PK-PJ-005',
@@ -115,6 +123,8 @@ class SalonDataService {
       'rating': 4.7,
       'reviews_count': 920,
       'distance_km': 2.1,
+      'lat': 33.5651,
+      'lng': 73.0169,
     },
     {
       'id': 'PK-PJ-006',
@@ -124,6 +134,8 @@ class SalonDataService {
       'rating': 4.7,
       'reviews_count': 740,
       'distance_km': 1.1,
+      'lat': 32.1877,
+      'lng': 74.1945,
     },
     {
       'id': 'PK-PJ-007',
@@ -142,6 +154,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 410,
       'distance_km': 3.9,
+      'lat': 29.3544,
+      'lng': 71.6911,
     },
     {
       'id': 'PK-PJ-009',
@@ -205,6 +219,8 @@ class SalonDataService {
       'rating': 4.2,
       'reviews_count': 260,
       'distance_km': 4.0,
+      'lat': 32.0836,
+      'lng': 72.6711,
     },
     {
       'id': 'PK-PJ-016',
@@ -214,6 +230,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 410,
       'distance_km': 2.2,
+      'lat': 32.5742,
+      'lng': 74.0754,
     },
     {
       'id': 'PK-PJ-017',
@@ -223,6 +241,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 180,
       'distance_km': 3.5,
+      'lat': 30.8100,
+      'lng': 73.4500,
     },
     {
       'id': 'PK-PJ-018',
@@ -232,6 +252,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 230,
       'distance_km': 1.8,
+      'lat': 31.7131,
+      'lng': 73.9783,
     },
     {
       'id': 'PK-PJ-019',
@@ -241,6 +263,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 150,
       'distance_km': 2.9,
+      'lat': 32.9333,
+      'lng': 73.7333,
     },
     {
       'id': 'PK-PJ-020',
@@ -250,6 +274,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 210,
       'distance_km': 2.1,
+      'lat': 31.1179,
+      'lng': 74.4408,
     },
     {
       'id': 'PK-PJ-021',
@@ -259,6 +285,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 380,
       'distance_km': 2.7,
+      'lat': 28.4202,
+      'lng': 70.2989,
     },
     {
       'id': 'PK-PJ-022',
@@ -349,6 +377,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 520,
       'distance_km': 1.9,
+      'lat': 32.4945,
+      'lng': 74.5229,
     },
     {
       'id': 'PK-PJ-032',
@@ -895,7 +925,8 @@ class SalonDataService {
           firstData['short_description'] != null &&
           firstData['opening_hours'] != null &&
           firstData['services'] != null &&
-          firstData['service_names'] != null;
+          firstData['service_names'] != null &&
+          firstData['lat'] != null;
 
       if (alreadyHasExtendedFields) {
         return;
@@ -990,6 +1021,8 @@ class SalonDataService {
         rating: rating.toStringAsFixed(1),
         reviews: reviews.toString(),
         imageAsset: _salonImageAssets[index % _salonImageAssets.length],
+        latitude: (data['lat'] as num?)?.toDouble(),
+        longitude: (data['lng'] as num?)?.toDouble(),
       );
     });
   }

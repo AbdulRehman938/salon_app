@@ -51,3 +51,5 @@ app.*.map.json
 functions/.env
 functions/.env.*
 !functions/.env.example
+serviceAccountKey.json
+*.json.secret

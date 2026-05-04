@@ -45,47 +45,24 @@ class DashboardHeader extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Location',
-                          style: TextStyle(
-                            color: AppColors.gray1,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Hi, ${userDisplayName.trim().isEmpty ? 'Guest' : userDisplayName.trim()}',
-                          style: TextStyle(
-                            color: AppColors.gray1,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Text(
-                                locationLabel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: AppColors.dark1,
-                                  fontSize: _locationFontSize(locationLabel),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                        Flexible(
+                          fit: FlexFit.loose,
+                          child: Text(
+                            locationLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppColors.dark1,
+                              fontSize: _locationFontSize(locationLabel),
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(width: 2),
-                            const _DownArrowIcon(),
-                          ],
+                          ),
                         ),
+                        const SizedBox(width: 2),
+                        const _DownArrowIcon(),
                       ],
                     ),
                   ),

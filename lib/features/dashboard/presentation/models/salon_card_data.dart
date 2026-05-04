@@ -7,6 +7,8 @@ class SalonCardData {
     required this.rating,
     required this.reviews,
     required this.imageAsset,
+    this.latitude,
+    this.longitude,
   });
 
   final String salonId;
@@ -16,4 +18,6 @@ class SalonCardData {
   final String rating;
   final String reviews;
   final String imageAsset;
+  final double? latitude;
+  final double? longitude;
 }

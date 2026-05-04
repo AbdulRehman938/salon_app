@@ -15,7 +15,7 @@
       "source": "firebase/agent-skills",
       "sourceType": "github",
       "computedHash": "4d3de47b5be279ab3b0ee6055ae541f28d1cc45f8e8986c0b5df2f8d89f4ea30"
-    },
+    }, 
     "firebase-ai-logic": {
       "source": "firebase/agent-skills",
       "sourceType": "github",

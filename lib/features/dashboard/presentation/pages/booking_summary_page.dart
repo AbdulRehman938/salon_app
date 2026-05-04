@@ -167,7 +167,6 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         missing.add('date/time');
       }
 
-      debugPrint('Proceed blocked: missing ${missing.join(', ')}.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
