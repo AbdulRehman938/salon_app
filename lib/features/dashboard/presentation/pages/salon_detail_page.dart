@@ -62,6 +62,33 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
       return;
     }
 
+    // Unfavorite confirmation modal
+    if (_isFavorite) {
+      final bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Remove from Favorites?'),
+            content: const Text('Are you sure you want to remove this salon from your favorites?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Remove'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm != true) return;
+    }
+
     final next = !_isFavorite;
     setState(() {
       _isFavorite = next;
@@ -73,6 +100,18 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
         salonId: widget.salonId,
         isFavorite: next,
       );
+
+      if (next && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Added to favorites!'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            margin: EdgeInsets.all(16),
+          ),
+        );
+      }
     } catch (error) {
       if (!mounted) {
         return;

@@ -589,28 +589,15 @@ class _BookingsPageState extends State<BookingsPage> {
                         color: Colors.white.withValues(alpha: 0.78),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              size: 19,
-                            ),
+                      child: const Center(
+                        child: Text(
+                          'My Bookings',
+                          style: TextStyle(
+                            color: AppColors.dark1,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const Expanded(
-                            child: Text(
-                              'My Bookings',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: AppColors.dark1,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                        ),
                       ),
                     ),
                   ),
