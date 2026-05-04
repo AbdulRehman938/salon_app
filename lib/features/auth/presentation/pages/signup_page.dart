@@ -333,13 +333,30 @@ class _SignupPageState extends State<SignupPage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
+            // Background Image with Mesh Gradient Overlay
             Image.asset('assets/signin1.png', fit: BoxFit.cover),
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x26000000), Color(0xCC000000)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF4A90E2).withOpacity(0.4),
+                    const Color(0xFF1A1A1A).withOpacity(0.9),
+                  ],
+                ),
+              ),
+            ),
+            // Floating Decorative Circles for "Aura" effect
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF4A90E2).withOpacity(0.15),
                 ),
               ),
             ),
@@ -347,265 +364,290 @@ class _SignupPageState extends State<SignupPage> {
               child: Stack(
                 children: [
                   SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 72, 16, 20),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight:
-                            MediaQuery.of(context).size.height -
-                            MediaQuery.of(context).padding.top -
-                            MediaQuery.of(context).padding.bottom -
-                            92,
-                      ),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFDFEFF),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(0xFFD7DEED),
-                              width: 1,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x260B0C15),
-                                blurRadius: 18,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
+                    child: Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: BackdropFilter(
+                          filter: ColorFilter.mode(
+                            Colors.white.withOpacity(0.05),
+                            BlendMode.srcOver,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Text(
-                                'Create Account',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.dark1,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                          child: Container(
+                            padding: const EdgeInsets.all(28),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.92),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.5),
+                                width: 1.5,
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Set up your profile to continue',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.gray1,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 15),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Center(
-                                child: GestureDetector(
-                                  onTap: _isSubmitting
-                                      ? null
-                                      : _pickProfileImage,
-                                  child: Container(
-                                    width: 110,
-                                    height: 110,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white,
-                                      border: Border.all(
-                                        color: AppColors.main,
-                                        width: 1.8,
-                                      ),
-                                      image: _profileImageBytes == null
-                                          ? null
-                                          : DecorationImage(
-                                              image: MemoryImage(
-                                                _profileImageBytes!,
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Text(
+                                  'Create Account',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFF1A1A1A),
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Join our community of beauty lovers',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFF666666),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                // Profile Picture Section with Glow
+                                Center(
+                                  child: GestureDetector(
+                                    onTap: _isSubmitting ? null : _pickProfileImage,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFF4A90E2).withOpacity(0.3),
+                                                blurRadius: 20,
+                                                spreadRadius: 5,
                                               ),
-                                              fit: BoxFit.cover,
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 110,
+                                          height: 110,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white,
+                                            border: Border.all(
+                                              color: const Color(0xFF4A90E2),
+                                              width: 3,
                                             ),
+                                            image: _profileImageBytes == null
+                                                ? null
+                                                : DecorationImage(
+                                                    image: MemoryImage(_profileImageBytes!),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                          ),
+                                          child: _profileImageBytes == null
+                                              ? const Icon(
+                                                  Icons.add_a_photo_rounded,
+                                                  color: Color(0xFF4A90E2),
+                                                  size: 32,
+                                                )
+                                              : null,
+                                        ),
+                                        if (_profileImageBytes == null)
+                                          Positioned(
+                                            bottom: 0,
+                                            right: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF4A90E2),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.add,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    child: _profileImageBytes == null
-                                        ? const Icon(
-                                            Icons.add_a_photo_rounded,
-                                            color: AppColors.main,
-                                            size: 28,
-                                          )
-                                        : null,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Tap to add profile picture',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.gray1,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Profile Picture',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFF1A1A1A),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 18),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ReactiveTextField<String>(
-                                      formControlName: 'firstName',
-                                      readOnly: _isSubmitting,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: _inputDecoration(
-                                        label: 'First Name',
-                                        errorText: _fieldError(
-                                          'firstName',
-                                          'First name',
+                                const SizedBox(height: 32),
+                                // Name Row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ReactiveTextField<String>(
+                                        formControlName: 'firstName',
+                                        readOnly: _isSubmitting,
+                                        decoration: _inputDecoration(
+                                          label: 'First Name',
+                                          icon: Icons.person_outline_rounded,
+                                          errorText: _fieldError('firstName', 'First name'),
                                         ),
-                                        icon: Icons.person_outline_rounded,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: ReactiveTextField<String>(
-                                      formControlName: 'lastName',
-                                      readOnly: _isSubmitting,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: _inputDecoration(
-                                        label: 'Last Name',
-                                        errorText: _fieldError(
-                                          'lastName',
-                                          'Last name',
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ReactiveTextField<String>(
+                                        formControlName: 'lastName',
+                                        readOnly: _isSubmitting,
+                                        decoration: _inputDecoration(
+                                          label: 'Last Name',
+                                          icon: Icons.badge_outlined,
+                                          errorText: _fieldError('lastName', 'Last name'),
                                         ),
-                                        icon: Icons.badge_outlined,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              ReactiveTextField<String>(
-                                formControlName: 'email',
-                                readOnly: _isSubmitting,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.done,
-                                decoration: _inputDecoration(
-                                  label: 'Email',
-                                  errorText: _fieldError('email', 'Email'),
-                                  icon: Icons.email_outlined,
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              ReactiveTextField<String>(
-                                formControlName: 'phoneNumber',
-                                readOnly: _isSubmitting,
-                                keyboardType: TextInputType.phone,
-                                textInputAction: TextInputAction.next,
-                                decoration: _inputDecoration(
-                                  label: 'Phone Number',
-                                  errorText: _fieldError(
-                                    'phoneNumber',
-                                    'Phone number',
+                                const SizedBox(height: 16),
+                                ReactiveTextField<String>(
+                                  formControlName: 'email',
+                                  readOnly: _isSubmitting,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: _inputDecoration(
+                                    label: 'Email Address',
+                                    icon: Icons.email_outlined,
+                                    errorText: _fieldError('email', 'Email'),
                                   ),
-                                  icon: Icons.phone_outlined,
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final useSingleColumn =
-                                      constraints.maxWidth < 430;
-
-                                  final cityField = ReactiveTextField<String>(
-                                    formControlName: 'city',
-                                    readOnly: _isSubmitting,
-                                    textInputAction: TextInputAction.next,
-                                    decoration: _inputDecoration(
-                                      label: 'City',
-                                      errorText: _fieldError('city', 'City'),
-                                      icon: Icons.location_city_outlined,
+                                const SizedBox(height: 16),
+                                ReactiveTextField<String>(
+                                  formControlName: 'phoneNumber',
+                                  readOnly: _isSubmitting,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: _inputDecoration(
+                                    label: 'Phone Number',
+                                    icon: Icons.phone_outlined,
+                                    errorText: _fieldError('phoneNumber', 'Phone'),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: ReactiveTextField<String>(
+                                        formControlName: 'city',
+                                        readOnly: _isSubmitting,
+                                        decoration: _inputDecoration(
+                                          label: 'City',
+                                          icon: Icons.location_city_outlined,
+                                          errorText: _fieldError('city', 'City'),
+                                        ),
+                                      ),
                                     ),
-                                  );
-
-                                  final genderField =
-                                      ReactiveDropdownField<String>(
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      flex: 2,
+                                      child: ReactiveDropdownField<String>(
                                         formControlName: 'gender',
                                         isExpanded: true,
                                         decoration: _inputDecoration(
                                           label: 'Gender',
-                                          errorText: _fieldError(
-                                            'gender',
-                                            'Gender',
-                                          ),
+                                          errorText: _fieldError('gender', 'Gender'),
                                         ),
                                         items: _genderOptions
-                                            .map(
-                                              (value) =>
-                                                  DropdownMenuItem<String>(
-                                                    value: value,
-                                                    child: Text(
-                                                      value,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                            )
+                                            .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                                             .toList(),
-                                      );
-
-                                  if (useSingleColumn) {
-                                    return Column(
-                                      children: [
-                                        cityField,
-                                        const SizedBox(height: 12),
-                                        genderField,
-                                      ],
-                                    );
-                                  }
-
-                                  return Row(
-                                    children: [
-                                      Expanded(child: cityField),
-                                      const SizedBox(width: 10),
-                                      Expanded(child: genderField),
-                                    ],
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              ReactiveTextField<String>(
-                                formControlName: 'address',
-                                readOnly: _isSubmitting,
-                                textInputAction: TextInputAction.done,
-                                decoration: _inputDecoration(
-                                  label: 'Address',
-                                  errorText: _fieldError('address', 'Address'),
-                                  icon: Icons.home_outlined,
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              SizedBox(
-                                height: 54,
-                                child: ReactiveFormConsumer(
-                                  builder: (context, form, _) => ElevatedButton(
-                                    onPressed: _isSubmitting
-                                        ? null
-                                        : () => _submitSignup(form),
-                                    style: ElevatedButton.styleFrom(
-                                      elevation: 0,
-                                      backgroundColor: AppColors.main,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: Text(
-                                      _isSubmitting
-                                          ? 'Signing Up ...'
-                                          : 'Continue',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                ReactiveTextField<String>(
+                                  formControlName: 'address',
+                                  readOnly: _isSubmitting,
+                                  decoration: _inputDecoration(
+                                    label: 'Residential Address',
+                                    icon: Icons.home_outlined,
+                                    errorText: _fieldError('address', 'Address'),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                // Enhanced Continue Button
+                                SizedBox(
+                                  height: 60,
+                                  child: ReactiveFormConsumer(
+                                    builder: (context, form, _) => Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(18),
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF4A90E2).withOpacity(0.3),
+                                            blurRadius: 15,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ElevatedButton(
+                                        onPressed: _isSubmitting ? null : () => _submitSignup(form),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          shadowColor: Colors.transparent,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(18),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _isSubmitting ? 'Creating Account...' : 'Continue',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 20),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Already have an account? ',
+                                      style: TextStyle(color: Color(0xFF666666)),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => Navigator.pop(context),
+                                      child: const Text(
+                                        'Sign In',
+                                        style: TextStyle(
+                                          color: Color(0xFF4A90E2),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -613,14 +655,19 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   Positioned(
                     top: 10,
-                    left: 8,
-                    child: IconButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => Navigator.of(context).maybePop(),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                    left: 12,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        onPressed: _isSubmitting ? null : () => Navigator.of(context).maybePop(),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),

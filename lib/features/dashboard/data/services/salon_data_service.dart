@@ -1,6 +1,9 @@
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
+import 'package:salon_app/core/constants/pakistan_cities.dart';
 import '../../../auth/data/services/auth_service.dart';
 import '../../presentation/models/salon_detail_data.dart';
 import '../../presentation/models/salon_card_data.dart';
@@ -11,6 +14,12 @@ class SalonDataService {
   static const String _collection = 'salons';
   static const String _usersCollection = 'users';
   static const String _emailOtpCollection = 'emailOtpVerifications';
+  
+  // Static Caching Layer
+  static final Map<String, List<SalonCardData>> _salonsCache = {};
+  static final Map<String, List<String>> _servicesCache = {};
+  static final Map<String, List<String>> _locationsCache = {};
+  static DateTime? _lastCacheClear;
 
   bool _isPermissionDeniedError(Object error) {
     if (error is FirebaseException) {
@@ -70,7 +79,7 @@ class SalonDataService {
         'PK-PJ-040': <String>['Hair Spa', 'Haircut'],
       };
 
-  static const List<Map<String, Object>> _seedSalons = <Map<String, Object>>[
+  static final List<Map<String, Object>> _seedSalons = <Map<String, Object>>[
     {
       'id': 'PK-PJ-001',
       'name': 'Shafaq n Kami Salon',
@@ -145,6 +154,8 @@ class SalonDataService {
       'rating': 4.7,
       'reviews_count': 2360,
       'distance_km': 2.8,
+      'lat': 31.5204,
+      'lng': 74.3587,
     },
     {
       'id': 'PK-PJ-008',
@@ -165,6 +176,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 1473,
       'distance_km': 1.9,
+      'lat': 31.5510,
+      'lng': 74.3540,
     },
     {
       'id': 'PK-PJ-010',
@@ -174,6 +187,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 1320,
       'distance_km': 2.4,
+      'lat': 31.5300,
+      'lng': 74.3400,
     },
     {
       'id': 'PK-PJ-011',
@@ -183,6 +198,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 890,
       'distance_km': 3.7,
+      'lat': 33.5651,
+      'lng': 73.0169,
     },
     {
       'id': 'PK-PJ-012',
@@ -192,6 +209,8 @@ class SalonDataService {
       'rating': 4.7,
       'reviews_count': 620,
       'distance_km': 2.9,
+      'lat': 30.1575,
+      'lng': 71.5249,
     },
     {
       'id': 'PK-PJ-013',
@@ -201,6 +220,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 540,
       'distance_km': 1.3,
+      'lat': 31.4504,
+      'lng': 73.1350,
     },
     {
       'id': 'PK-PJ-014',
@@ -210,6 +231,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 310,
       'distance_km': 2.6,
+      'lat': 29.3544,
+      'lng': 71.6911,
     },
     {
       'id': 'PK-PJ-015',
@@ -296,6 +319,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 210,
       'distance_km': 3.1,
+      'lat': 30.3017,
+      'lng': 71.9321,
     },
     {
       'id': 'PK-PJ-023',
@@ -305,6 +330,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 260,
       'distance_km': 2.4,
+      'lat': 30.0419,
+      'lng': 72.3528,
     },
     {
       'id': 'PK-PJ-024',
@@ -314,6 +341,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 310,
       'distance_km': 1.6,
+      'lat': 30.6682,
+      'lng': 73.1114,
     },
     {
       'id': 'PK-PJ-025',
@@ -323,6 +352,8 @@ class SalonDataService {
       'rating': 4.2,
       'reviews_count': 180,
       'distance_km': 2.9,
+      'lat': 30.3411,
+      'lng': 73.3889,
     },
     {
       'id': 'PK-PJ-026',
@@ -332,6 +363,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 220,
       'distance_km': 3.3,
+      'lat': 32.5850,
+      'lng': 73.4861,
     },
     {
       'id': 'PK-PJ-027',
@@ -341,6 +374,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 150,
       'distance_km': 2.0,
+      'lat': 31.7200,
+      'lng': 72.9789,
     },
     {
       'id': 'PK-PJ-028',
@@ -350,6 +385,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 270,
       'distance_km': 2.5,
+      'lat': 31.2781,
+      'lng': 72.3317,
     },
     {
       'id': 'PK-PJ-029',
@@ -359,6 +396,8 @@ class SalonDataService {
       'rating': 4.2,
       'reviews_count': 140,
       'distance_km': 3.8,
+      'lat': 33.7667,
+      'lng': 72.3667,
     },
     {
       'id': 'PK-PJ-030',
@@ -368,6 +407,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 190,
       'distance_km': 2.3,
+      'lat': 32.9333,
+      'lng': 72.8667,
     },
     {
       'id': 'PK-PJ-031',
@@ -388,6 +429,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 160,
       'distance_km': 2.6,
+      'lat': 32.1000,
+      'lng': 74.8833,
     },
     {
       'id': 'PK-PJ-033',
@@ -397,6 +440,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 170,
       'distance_km': 2.1,
+      'lat': 32.0667,
+      'lng': 73.6833,
     },
     {
       'id': 'PK-PJ-034',
@@ -406,6 +451,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 480,
       'distance_km': 2.7,
+      'lat': 32.1617,
+      'lng': 74.1983,
     },
     {
       'id': 'PK-PJ-035',
@@ -415,6 +462,8 @@ class SalonDataService {
       'rating': 4.8,
       'reviews_count': 2100,
       'distance_km': 1.7,
+      'lat': 31.4800,
+      'lng': 74.3200,
     },
     {
       'id': 'PK-PJ-036',
@@ -424,6 +473,8 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 390,
       'distance_km': 2.8,
+      'lat': 30.1800,
+      'lng': 71.4800,
     },
     {
       'id': 'PK-PJ-037',
@@ -433,6 +484,8 @@ class SalonDataService {
       'rating': 4.5,
       'reviews_count': 670,
       'distance_km': 1.9,
+      'lat': 31.4200,
+      'lng': 73.0800,
     },
     {
       'id': 'PK-PJ-038',
@@ -442,6 +495,8 @@ class SalonDataService {
       'rating': 4.4,
       'reviews_count': 280,
       'distance_km': 2.5,
+      'lat': 29.3800,
+      'lng': 71.6500,
     },
     {
       'id': 'PK-PJ-039',
@@ -451,6 +506,8 @@ class SalonDataService {
       'rating': 4.3,
       'reviews_count': 300,
       'distance_km': 3.0,
+      'lat': 32.1000,
+      'lng': 72.6800,
     },
     {
       'id': 'PK-PJ-040',
@@ -460,7 +517,24 @@ class SalonDataService {
       'rating': 4.6,
       'reviews_count': 350,
       'distance_km': 2.2,
+      'lat': 32.5800,
+      'lng': 74.0800,
     },
+    // Adding 177 more salons to reach 217
+    for (int i = 41; i <= 217; i++)
+      {
+        'id': 'PK-PJ-${i.toString().padLeft(3, '0')}',
+        'name': 'Salon ${i}',
+        'state': 'Punjab',
+        'city': [
+          'Lahore', 'Faisalabad', 'Multan', 'Rawalpindi', 'Gujranwala', 
+          'Bahawalpur', 'Sargodha', 'Gujrat', 'Sahiwal', 'Jhang', 
+          'Rahim Yar Khan', 'Sheikhupura', 'Okara', 'Kasur', 'Chiniot'
+        ][i % 15],
+        'rating': (4.0 + (i % 10) / 10).toDouble(),
+        'reviews_count': 100 + (i * 10) % 1000,
+        'distance_km': 1.0 + (i % 50) / 10,
+      },
   ];
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -868,9 +942,24 @@ class SalonDataService {
         'Professional salon in $city offering modern beauty services.';
 
     final serviceNames = _serviceNamesForSalon(salon);
+    
+    // Automatic coordinate lookup from local database if missing
+    double? lat = salon['lat'] as double?;
+    double? lng = salon['lng'] as double?;
+    
+    if (lat == null || lng == null) {
+      final cityKey = city.trim().toLowerCase();
+      final cityFallback = PakistanCities.coordinates[cityKey];
+      if (cityFallback != null) {
+        lat = cityFallback.latitude;
+        lng = cityFallback.longitude;
+      }
+    }
 
     return <String, Object>{
       ...salon,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
       'full_address': salon.containsKey('full_address')
           ? salon['full_address'] as Object
           : defaultAddress,
@@ -917,30 +1006,50 @@ class SalonDataService {
         return;
       }
 
-      final firstId = _seedSalons.first['id']!.toString();
-      final firstSnapshot = await collection.doc(firstId).get();
-      final firstData = firstSnapshot.data();
-      final alreadyHasExtendedFields =
-          firstData != null &&
-          firstData['short_description'] != null &&
-          firstData['opening_hours'] != null &&
-          firstData['services'] != null &&
-          firstData['service_names'] != null &&
-          firstData['lat'] != null;
-
-      if (alreadyHasExtendedFields) {
-        return;
+      // Efficiently check if ANY salon in the entire collection is missing coordinates
+      final missingSnapshot = await collection.where('lat', isNull: true).limit(1).get();
+      
+      if (missingSnapshot.docs.isNotEmpty) {
+        debugPrint('SalonDataService: Starting unique coordinate assignment for all salons...');
+        
+        // Fetch all salons in the collection (217+ salons)
+        final allSalonsSnapshot = await collection.get();
+        final batch = _firestore.batch();
+        int repairCount = 0;
+        
+        for (final doc in allSalonsSnapshot.docs) {
+          final data = doc.data();
+          if (data['lat'] == null) {
+            final city = (data['city'] ?? '').toString().trim().toLowerCase();
+            final fallback = PakistanCities.coordinates[city] ?? PakistanCities.coordinates['lahore']!;
+            
+            // Create a unique, deterministic offset for this specific salon
+            // This spreads salons realistically over a ~2-4km radius from city center
+            final int idHash = doc.id.hashCode.abs();
+            final double angle = (idHash % 360) * (pi / 180);
+            // Use a variable distance to create a realistic spread
+            final double distance = 0.005 + (idHash % 150) * 0.00015; 
+            
+            batch.update(doc.reference, {
+              'lat': fallback.latitude + (distance * sin(angle)),
+              'lng': fallback.longitude + (distance * cos(angle) * 1.2),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+            
+            repairCount++;
+            
+            // Commit in batches of 100 to stay well under the 500 limit
+            if (repairCount % 100 == 0) {
+              await batch.commit();
+            }
+          }
+        }
+        
+        if (repairCount > 0) {
+          await batch.commit();
+          debugPrint('SalonDataService: Successfully assigned unique coordinates to $repairCount salons.');
+        }
       }
-
-      final batch = _firestore.batch();
-      for (final salon in _seedSalons) {
-        final id = salon['id']!.toString();
-        batch.set(collection.doc(id), {
-          ..._buildFullSalonPayload(salon),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
-      await batch.commit();
     } catch (error) {
       if (!_isPermissionDeniedError(error)) {
         rethrow;
@@ -948,83 +1057,117 @@ class SalonDataService {
     }
   }
 
+  /// Clears the local data cache. Use this when user manually refreshes 
+  /// or when data is known to have changed.
+  void clearCache() {
+    _salonsCache.clear();
+    _servicesCache.clear();
+    _locationsCache.clear();
+    debugPrint('SalonDataService: Cache cleared.');
+  }
+
+  /// Checks if the salons for the given parameters are already in memory.
+  bool isCached({String? state, String? city, String? serviceName}) {
+    final cacheKey = '${state ?? 'any'}|${city ?? 'any'}|${serviceName ?? 'any'}';
+    return _salonsCache.containsKey(cacheKey);
+  }
+
   Future<List<SalonCardData>> fetchSalons({
     String? state,
     String? city,
     String? serviceName,
   }) async {
-    Query<Map<String, dynamic>> query = _firestore.collection(_collection);
-
-    final normalizedState = state?.trim() ?? '';
-    final normalizedCity = city?.trim() ?? '';
-
-    if (normalizedState.isNotEmpty) {
-      query = query.where('state', isEqualTo: normalizedState);
-    }
-    if (normalizedCity.isNotEmpty) {
-      query = query.where('city', isEqualTo: normalizedCity);
+    // Generate a unique cache key
+    final cacheKey = '${state ?? 'any'}|${city ?? 'any'}|${serviceName ?? 'any'}';
+    
+    // Return from cache if available
+    if (_salonsCache.containsKey(cacheKey)) {
+      debugPrint('SalonDataService: Returning salons from cache for $cacheKey');
+      return _salonsCache[cacheKey]!;
     }
 
-    final snapshot = await query.get();
-    final normalizedService = serviceName?.trim().toLowerCase() ?? '';
+    try {
+      debugPrint('SalonDataService: Fetching salons from database for $cacheKey');
+      Query<Map<String, dynamic>> query = _firestore.collection(_collection);
 
-    final filteredDocs = snapshot.docs.where((doc) {
-      if (normalizedService.isEmpty || normalizedService == 'all services') {
-        return true;
+      final normalizedState = state?.trim() ?? '';
+      final normalizedCity = city?.trim() ?? '';
+
+      if (normalizedState.isNotEmpty) {
+        query = query.where('state', isEqualTo: normalizedState);
+      }
+      if (normalizedCity.isNotEmpty) {
+        query = query.where('city', isEqualTo: normalizedCity);
       }
 
-      final data = doc.data();
-      final fallbackNames = _serviceNamesBySalonId[doc.id] ?? const <String>[];
+      final snapshot = await query.get();
+      final normalizedService = serviceName?.trim().toLowerCase() ?? '';
 
-      for (final name in fallbackNames) {
-        if (name.trim().toLowerCase() == normalizedService) {
+      final filteredDocs = snapshot.docs.where((doc) {
+        if (normalizedService.isEmpty || normalizedService == 'all services') {
           return true;
         }
-      }
 
-      final rawNames = data['service_names'];
-      if (rawNames is List) {
-        for (final name in rawNames) {
-          if (name.toString().trim().toLowerCase() == normalizedService) {
+        final data = doc.data();
+        final fallbackNames = _serviceNamesBySalonId[doc.id] ?? const <String>[];
+
+        for (final name in fallbackNames) {
+          if (name.trim().toLowerCase() == normalizedService) {
             return true;
           }
         }
-      }
 
-      final rawServices = data['services'];
-      if (rawServices is List) {
-        for (final item in rawServices) {
-          if (item is Map) {
-            final name = (item['service_name'] ?? '').toString();
-            if (name.trim().toLowerCase() == normalizedService) {
+        final rawNames = data['service_names'];
+        if (rawNames is List) {
+          for (final name in rawNames) {
+            if (name.toString().trim().toLowerCase() == normalizedService) {
               return true;
             }
           }
         }
-      }
-      return false;
-    }).toList();
 
-    return List<SalonCardData>.generate(filteredDocs.length, (index) {
-      final data = filteredDocs[index].data();
-      final rating = (data['rating'] as num?)?.toDouble() ?? 0;
-      final reviews = (data['reviews_count'] as num?)?.toInt() ?? 0;
-      final distance = (data['distance_km'] as num?)?.toDouble() ?? 0;
-      final cityValue = (data['city'] ?? '').toString();
-      final stateValue = (data['state'] ?? '').toString();
+        final rawServices = data['services'];
+        if (rawServices is List) {
+          for (final item in rawServices) {
+            if (item is Map) {
+              final name = (item['service_name'] ?? '').toString();
+              if (name.trim().toLowerCase() == normalizedService) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      }).toList();
 
-      return SalonCardData(
-        salonId: filteredDocs[index].id,
-        name: (data['name'] ?? 'Unknown Salon').toString(),
-        distance: _formatDistance(distance),
-        location: '$cityValue, $stateValue',
-        rating: rating.toStringAsFixed(1),
-        reviews: reviews.toString(),
-        imageAsset: _salonImageAssets[index % _salonImageAssets.length],
-        latitude: (data['lat'] as num?)?.toDouble(),
-        longitude: (data['lng'] as num?)?.toDouble(),
-      );
-    });
+      final results = List<SalonCardData>.generate(filteredDocs.length, (index) {
+        final data = filteredDocs[index].data();
+        final rating = (data['rating'] as num?)?.toDouble() ?? 0;
+        final reviews = (data['reviews_count'] as num?)?.toInt() ?? 0;
+        final distance = (data['distance_km'] as num?)?.toDouble() ?? 0;
+        final cityValue = (data['city'] ?? '').toString();
+        final stateValue = (data['state'] ?? '').toString();
+
+        return SalonCardData(
+          salonId: filteredDocs[index].id,
+          name: (data['name'] ?? 'Unknown Salon').toString(),
+          distance: _formatDistance(distance),
+          location: '$cityValue, $stateValue',
+          rating: rating.toStringAsFixed(1),
+          reviews: reviews.toString(),
+          imageAsset: _salonImageAssets[index % _salonImageAssets.length],
+          latitude: (data['lat'] as num?)?.toDouble(),
+          longitude: (data['lng'] as num?)?.toDouble(),
+        );
+      });
+
+      // Store in cache
+      _salonsCache[cacheKey] = results;
+      return results;
+    } catch (e) {
+      debugPrint('Error fetching salons: $e');
+      return <SalonCardData>[];
+    }
   }
 
   Future<SalonDetailData> fetchSalonDetail(String salonId) async {
@@ -1105,56 +1248,67 @@ class SalonDataService {
     String? state,
     String? city,
   }) async {
-    Query<Map<String, dynamic>> query = _firestore.collection(_collection);
-
-    final normalizedState = state?.trim() ?? '';
-    final normalizedCity = city?.trim() ?? '';
-
-    if (normalizedState.isNotEmpty) {
-      query = query.where('state', isEqualTo: normalizedState);
-    }
-    if (normalizedCity.isNotEmpty) {
-      query = query.where('city', isEqualTo: normalizedCity);
+    final cacheKey = '${state ?? 'any'}|${city ?? 'any'}';
+    if (_servicesCache.containsKey(cacheKey)) {
+      return _servicesCache[cacheKey]!;
     }
 
-    final snapshot = await query.get();
-    final names = <String>{};
+    try {
+      Query<Map<String, dynamic>> query = _firestore.collection(_collection);
 
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final fallbackNames = _serviceNamesBySalonId[doc.id] ?? const <String>[];
-      for (final name in fallbackNames) {
-        final normalized = name.trim();
-        if (normalized.isNotEmpty) {
-          names.add(normalized);
-        }
+      final normalizedState = state?.trim() ?? '';
+      final normalizedCity = city?.trim() ?? '';
+
+      if (normalizedState.isNotEmpty) {
+        query = query.where('state', isEqualTo: normalizedState);
+      }
+      if (normalizedCity.isNotEmpty) {
+        query = query.where('city', isEqualTo: normalizedCity);
       }
 
-      final rawNames = data['service_names'];
-      if (rawNames is List) {
-        for (final item in rawNames) {
-          final name = item.toString().trim();
-          if (name.isNotEmpty) {
-            names.add(name);
+      final snapshot = await query.get();
+      final names = <String>{};
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final fallbackNames = _serviceNamesBySalonId[doc.id] ?? const <String>[];
+        for (final name in fallbackNames) {
+          final normalized = name.trim();
+          if (normalized.isNotEmpty) {
+            names.add(normalized);
           }
         }
-      } else {
-        final rawServices = data['services'];
-        if (rawServices is List) {
-          for (final item in rawServices) {
-            if (item is Map) {
-              final name = (item['service_name'] ?? '').toString().trim();
-              if (name.isNotEmpty) {
-                names.add(name);
+
+        final rawNames = data['service_names'];
+        if (rawNames is List) {
+          for (final item in rawNames) {
+            final name = item.toString().trim();
+            if (name.isNotEmpty) {
+              names.add(name);
+            }
+          }
+        } else {
+          final rawServices = data['services'];
+          if (rawServices is List) {
+            for (final item in rawServices) {
+              if (item is Map) {
+                final name = (item['service_name'] ?? '').toString().trim();
+                if (name.isNotEmpty) {
+                  names.add(name);
+                }
               }
             }
           }
         }
       }
-    }
 
-    final sorted = names.toList()..sort();
-    return sorted;
+      final results = names.toList()..sort();
+      _servicesCache[cacheKey] = results;
+      return results;
+    } catch (e) {
+      debugPrint('Error fetching unique services: $e');
+      return <String>[];
+    }
   }
 
   Future<Map<String, List<String>>> fetchCitiesByState() async {

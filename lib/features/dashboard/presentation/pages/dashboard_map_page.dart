@@ -1,11 +1,12 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../models/salon_card_data.dart';
-import '../widgets/salon_card.dart';
+import 'package:salon_app/core/constants/pakistan_cities.dart';
+import '../../presentation/models/salon_card_data.dart';
+import '../../data/services/salon_data_service.dart';
 import '../widgets/map_salon_card.dart';
 import 'salon_detail_page.dart';
-import '../../data/services/salon_data_service.dart';
 
 class DashboardMapPage extends StatefulWidget {
   final String initialLocation;
@@ -46,10 +47,20 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
 
   final SalonDataService _salonDataService = SalonDataService();
   Set<String> _favoriteSalonIds = {};
+  
+  // Filter states
+  double _minRating = 0.0;
+  String _selectedPriceRange = 'All';
+  double _maxDistanceKm = 20.0;
+  String _selectedService = 'All Services';
+  List<String> _availableServices = ['All Services'];
 
   final MapController _mapController = MapController();
   late final ScrollController _scrollController;
   bool _isAnimatingCardScroll = false;
+  
+  /// Dynamic cache for geocoded city coordinates
+  static final Map<String, LatLng> _geocodedCache = {};
 
   @override
   void initState() {
@@ -58,6 +69,7 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
     _scrollController.addListener(_onScroll);
     _favoriteSalonIds = widget.favoriteSalonIds ?? {};
     _loadFavorites();
+    _loadServices();
     _searchController = TextEditingController(text: widget.initialLocation);
     _searchController.addListener(_onSearchChanged);
     _citySearchController = TextEditingController();
@@ -71,16 +83,28 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
         curve: Curves.easeOutCubic,
       ),
     );
+    // Determine initial position based on filtered salons or city fallback
     final initialSalonsWithCoords = _filteredSalons.where((s) => s.latitude != null && s.longitude != null).toList();
+    
     if (initialSalonsWithCoords.isNotEmpty) {
       _initialPosition = LatLng(
         initialSalonsWithCoords.first.latitude!,
         initialSalonsWithCoords.first.longitude!,
       );
     } else {
-      // Default to Lahore, Pakistan center if no specific salon coordinates are found
-      _initialPosition = const LatLng(31.5204, 74.3587); 
+      // Try city fallback from local database
+      final city = _parseCityState(widget.initialLocation).city.toLowerCase();
+      _initialPosition = PakistanCities.coordinates[city] ?? const LatLng(31.5204, 74.3587);
     }
+    
+    debugPrint('DashboardMapPage: Initial location is "${widget.initialLocation}"');
+    debugPrint('DashboardMapPage: Found ${initialSalonsWithCoords.length} salons with coordinates out of ${_filteredSalons.length} filtered salons');
+    debugPrint('DashboardMapPage: Setting initial position to ${_initialPosition.latitude}, ${_initialPosition.longitude}');
+
+    // Trigger map centering after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fitMapToSalons();
+    });
   }
 
   @override
@@ -118,21 +142,38 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
   }
 
   void _fitMapToSalons() {
-    if (_filteredSalons.isEmpty) return;
-    
-    final points = _filteredSalons
+    final salons = _filteredSalons;
+    final points = salons
         .where((s) => s.latitude != null && s.longitude != null)
         .map((s) => LatLng(s.latitude!, s.longitude!))
         .toList();
         
-    if (points.isEmpty) return;
+    debugPrint('DashboardMapPage: Fitting map to ${points.length} points for query "${_searchController.text}"');
+        
+    if (points.isEmpty) {
+      debugPrint('DashboardMapPage: No points found to fit camera, trying local city database');
+      final cityText = _searchController.text.trim();
+      final cityKey = _parseCityState(cityText).city.toLowerCase();
+      
+      final fallback = PakistanCities.coordinates[cityKey];
+      if (fallback != null) {
+        debugPrint('DashboardMapPage: Moving camera to local city fallback: ${fallback.latitude}, ${fallback.longitude}');
+        _mapController.move(fallback, 13);
+      } else {
+        debugPrint('DashboardMapPage: City "$cityKey" not found in local database, falling back to Lahore');
+        _mapController.move(const LatLng(31.5204, 74.3587), 13);
+      }
+      return;
+    }
     
     if (points.length == 1) {
+      debugPrint('DashboardMapPage: Moving camera to single point: ${points.first.latitude}, ${points.first.longitude}');
       _mapController.move(points.first, 14);
       return;
     }
     
     final bounds = LatLngBounds.fromPoints(points);
+    debugPrint('DashboardMapPage: Fitting camera to bounds: ${bounds.southWest} to ${bounds.northEast}');
     _mapController.fitCamera(
       CameraFit.bounds(
         bounds: bounds,
@@ -149,15 +190,54 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
         
     if (points.isNotEmpty) {
       if (points.length == 1) {
-        // If only one salon, initialCenter will handle the centering.
         return null;
       }
       return CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(points),
-        padding: const EdgeInsets.all(50),
+        padding: const EdgeInsets.all(80), // Increased padding to show the border
       );
     }
     return null;
+  }
+
+  /// Generates points for a circular "city border" highlight around the salons
+  List<LatLng> _getCityHighlightPoints() {
+    final points = _filteredSalons
+        .where((s) => s.latitude != null && s.longitude != null)
+        .map((s) => LatLng(s.latitude!, s.longitude!))
+        .toList();
+    
+    LatLng center;
+    double maxDist = 0.05; // Default approx 5km
+
+    if (points.isEmpty) {
+      final city = _parseCityState(_searchController.text).city.toLowerCase();
+      center = PakistanCities.coordinates[city] ?? const LatLng(31.5204, 74.3587);
+    } else {
+      // Calculate center
+      double avgLat = points.map((p) => p.latitude).reduce((a, b) => a + b) / points.length;
+      double avgLng = points.map((p) => p.longitude).reduce((a, b) => a + b) / points.length;
+      center = LatLng(avgLat, avgLng);
+
+      // Calculate radius
+      for (final p in points) {
+        final dist = (p.latitude - avgLat).abs() + (p.longitude - avgLng).abs();
+        if (dist > maxDist) maxDist = dist;
+      }
+      maxDist += 0.01; // buffer
+    }
+
+    // Generate circle points
+    final simpleCircle = <LatLng>[];
+    for (int i = 0; i <= 60; i++) {
+      final angle = (i * 6) * (pi / 180);
+      simpleCircle.add(LatLng(
+        center.latitude + maxDist * 1.1 * sin(angle),
+        center.longitude + maxDist * 1.4 * cos(angle),
+      ));
+    }
+
+    return simpleCircle;
   }
 
   ({String city, String state}) _parseCityState(String location) {
@@ -234,16 +314,46 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
     setState(() {
       _selectedCardIndex = 0; // reset selection on filter change
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fitMapToSalons();
+    // Use a small delay to ensure state is updated and map is ready
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _fitMapToSalons();
+      }
     });
+  }
+
+  Future<void> _loadServices() async {
+    final services = await _salonDataService.fetchUniqueServiceNames();
+    if (mounted) {
+      setState(() {
+        _availableServices = ['All Services', ...services];
+      });
+    }
   }
 
   List<SalonCardData> get _filteredSalons {
     final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return widget.salons;
+    
     return widget.salons.where((salon) {
-      return salon.location.toLowerCase().contains(query);
+      // 1. Location Search Filter
+      final matchesLocation = query.isEmpty || salon.location.toLowerCase().contains(query);
+      if (!matchesLocation) return false;
+
+      // 2. Rating Filter
+      final rating = double.tryParse(salon.rating) ?? 0.0;
+      if (rating < _minRating) return false;
+
+      // 3. Price Filter (Mock logic based on distance/id for now)
+      if (_selectedPriceRange != 'All') {
+        final priceLevel = (salon.salonId.hashCode % 3 == 0) ? '\$\$\$' : (salon.salonId.hashCode % 2 == 0 ? '\$\$' : '\$');
+        if (priceLevel != _selectedPriceRange) return false;
+      }
+
+      // 4. Distance Filter
+      final distance = double.tryParse(salon.distance.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+      if (distance > _maxDistanceKm) return false;
+
+      return true;
     }).toList();
   }
 
@@ -373,8 +483,16 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: widget.searchLocation ?? _initialPosition,
-                initialZoom: 10,
-                initialCameraFit: _buildInitialCameraFit(),
+                initialZoom: 13,
+                onMapReady: () {
+                  debugPrint('DashboardMapPage: Map is ready');
+                  // Use a small delay to ensure tiles start loading
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted) {
+                      _fitMapToSalons();
+                    }
+                  });
+                },
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all,
                 ),
@@ -383,6 +501,16 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.salon_app',
+                ),
+                // City Area Highlight (Red Border)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _getCityHighlightPoints(),
+                      color: Colors.red.withOpacity(0.6),
+                      strokeWidth: 4,
+                    ),
+                  ],
                 ),
                 MarkerLayer(markers: _buildMarkers()),
               ],
@@ -444,19 +572,22 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Container(
-                            height: 50,
-                            width: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFFEEEEEE),
+                          GestureDetector(
+                            onTap: _showFilterSheet,
+                            child: Container(
+                              height: 50,
+                              width: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFEEEEEE),
+                                ),
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.tune_rounded,
-                              color: Color(0xFF1A1A1A),
+                              child: const Icon(
+                                Icons.tune_rounded,
+                                color: Color(0xFF4A90E2),
+                              ),
                             ),
                           ),
                         ],
@@ -637,28 +768,58 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
   List<Marker> _buildMarkers() {
     final List<Marker> markers = [];
     final salonsToDisplay = _filteredSalons;
+    debugPrint('DashboardMapPage: Building markers for ${salonsToDisplay.length} salons');
+    int markerCount = 0;
+    
     // Salon markers
     for (int i = 0; i < salonsToDisplay.length; i++) {
       final salon = salonsToDisplay[i];
-      // Only add marker if both latitude and longitude are present
-      if (salon.latitude != null && salon.longitude != null) {
+      
+      // Use salon coordinates if available, otherwise use city fallback
+      double? lat = salon.latitude;
+      double? lng = salon.longitude;
+      
+      if (lat == null || lng == null) {
+        // Parse city from salon location (e.g. "Rahim Yar Khan, Punjab")
+        final city = _parseCityState(salon.location).city.toLowerCase();
+        
+        // Try to find the city in our database, fallback to Lahore if missing
+        final fallback = PakistanCities.coordinates[city] ?? PakistanCities.coordinates['lahore']!;
+        
+        // Use a deterministic spread (circular/spiral) based on index
+        // so markers don't overlap exactly
+        final double angle = (i * 137.5) * (pi / 180); // Golden angle for even distribution
+        final double radius = 0.003 * sqrt(i + 1); // Gradually increasing radius
+        
+        lat = fallback.latitude + radius * sin(angle);
+        lng = fallback.longitude + radius * cos(angle) * 1.2;
+      }
+
+      if (lat != null && lng != null) {
+        markerCount++;
         final isSelected = i == _selectedCardIndex;
         markers.add(
           Marker(
-            width: isSelected ? 50 : 40,
-            height: isSelected ? 50 : 40,
-            point: LatLng(salon.latitude!, salon.longitude!),
+            width: isSelected ? 60 : 45,
+            height: isSelected ? 60 : 45,
+            point: LatLng(lat, lng),
             child: GestureDetector(
               onTap: () => _onCardTap(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF2962FF) : Colors.transparent,
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -666,8 +827,8 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
                   Icons.location_on,
                   color: isSelected
                       ? const Color(0xFF2962FF)
-                      : const Color(0xFF82A0FF),
-                  size: isSelected ? 50 : 40,
+                      : const Color(0xFF4A90E2),
+                  size: isSelected ? 38 : 28,
                 ),
               ),
             ),
@@ -675,6 +836,7 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
         );
       }
     }
+    debugPrint('DashboardMapPage: Created $markerCount blue thumbpin markers');
     // Yellow pin for search location
     if (widget.searchLocation != null) {
       markers.add(
@@ -699,5 +861,246 @@ class _DashboardMapPageState extends State<DashboardMapPage> with SingleTickerPr
       );
     }
     return markers;
+  }
+
+  void _showFilterSheet() {
+    // Store temporary values to avoid constant rebuilds of the underlying map
+    double tempRating = _minRating;
+    String tempPrice = _selectedPriceRange;
+    double tempDistance = _maxDistanceKm;
+    bool showError = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              // Island Handle
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filters',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setSheetState(() {
+                          tempRating = 0.0;
+                          tempPrice = 'All';
+                          tempDistance = 20.0;
+                        });
+                      },
+                      child: const Text('Reset All', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  children: [
+                    // Rating Filter
+                    _buildFilterSection(
+                      title: 'Minimum Rating',
+                      child: Row(
+                        children: [0.0, 3.0, 4.0, 4.5].map((rating) {
+                          final isSelected = tempRating == rating;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: ChoiceChip(
+                              label: Text(rating == 0.0 ? 'All' : '$rating+'),
+                              selected: isSelected,
+                              onSelected: (val) {
+                                setSheetState(() => tempRating = rating);
+                              },
+                              selectedColor: const Color(0xFF4A90E2).withOpacity(0.2),
+                              labelStyle: TextStyle(
+                                color: isSelected ? const Color(0xFF4A90E2) : Colors.grey[600],
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Price Filter
+                    _buildFilterSection(
+                      title: 'Price Range',
+                      child: Row(
+                        children: ['All', '\$', '\$\$', '\$\$\$'].map((range) {
+                          final isSelected = tempPrice == range;
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: ChoiceChip(
+                                label: Center(child: Text(range)),
+                                selected: isSelected,
+                                onSelected: (val) {
+                                  setSheetState(() => tempPrice = range);
+                                },
+                                selectedColor: const Color(0xFF4A90E2).withOpacity(0.2),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? const Color(0xFF4A90E2) : Colors.grey[600],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Distance Filter
+                    _buildFilterSection(
+                      title: 'Max Distance (${tempDistance.toInt()} km)',
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: const Color(0xFF4A90E2),
+                          thumbColor: const Color(0xFF4A90E2),
+                          overlayColor: const Color(0xFF4A90E2).withOpacity(0.2),
+                        ),
+                        child: Slider(
+                          value: tempDistance,
+                          min: 1.0,
+                          max: 50.0,
+                          divisions: 49,
+                          onChanged: (val) {
+                            setSheetState(() => tempDistance = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Error Message
+              if (showError)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'No salons found matching these filters. Try adjusting them!',
+                            style: TextStyle(color: Colors.red[700], fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // Apply Button
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Validate if any salons match BEFORE closing
+                      final potentialSalons = widget.salons.where((salon) {
+                        final rating = double.tryParse(salon.rating) ?? 0.0;
+                        if (rating < tempRating) return false;
+                        
+                        if (tempPrice != 'All') {
+                          final priceLevel = (salon.salonId.hashCode % 3 == 0) ? '\$\$\$' : (salon.salonId.hashCode % 2 == 0 ? '\$\$' : '\$');
+                          if (priceLevel != tempPrice) return false;
+                        }
+                        
+                        final distance = double.tryParse(salon.distance.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+                        if (distance > tempDistance) return false;
+                        
+                        return true;
+                      }).toList();
+
+                      if (potentialSalons.isEmpty) {
+                        setSheetState(() => showError = true);
+                      } else {
+                        setState(() {
+                          _minRating = tempRating;
+                          _selectedPriceRange = tempPrice;
+                          _maxDistanceKm = tempDistance;
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4A90E2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Apply Filters',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection({required String title, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 16),
+        child,
+      ],
+    );
   }
 }

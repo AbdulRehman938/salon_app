@@ -107,8 +107,8 @@ class _DashboardPageState extends State<DashboardPage>
         setState(() {
           _selectedLocation = location;
         });
-        await _loadServicesFromDatabase();
-        await _loadSalonsFromDatabase();
+        // We don't call load methods here anymore, 
+        // they are handled in the main _initializeDashboard flow
       }
     } on TimeoutException {
       _showLocationError(
@@ -150,10 +150,30 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _initializeDashboard() async {
     await _loadHeaderUserName();
+    // 1. One-time database seeding/repair
     await _salonDataService.ensureSeeded();
+    
+    // 2. Load static options and detect location
     await _loadLocationOptionsFromDatabase();
-    await _loadServicesFromDatabase();
-    await _loadSalonsFromDatabase();
+    
+    // 3. Before starting the load, check if we need the spinner
+    final parsed = _parseCityState(_selectedLocation);
+    final isDataCached = _salonDataService.isCached(
+      state: parsed.state.isNotEmpty ? parsed.state : null,
+      city: parsed.city.isNotEmpty ? parsed.city : null,
+    );
+    
+    if (mounted && isDataCached) {
+      setState(() {
+        _isSalonsLoading = false;
+      });
+    }
+
+    // 4. Load the actual data
+    await Future.wait([
+      _loadServicesFromDatabase(),
+      _loadSalonsFromDatabase(),
+    ]);
   }
 
   Future<void> _loadHeaderUserName() async {
@@ -235,17 +255,24 @@ class _DashboardPageState extends State<DashboardPage>
   }
 
   Future<void> _loadSalonsFromDatabase() async {
-    if (mounted) {
+    final parsed = _parseCityState(_selectedLocation);
+    final selectedService = (_services.isNotEmpty && _selectedServiceIndex < _services.length) 
+        ? _services[_selectedServiceIndex] 
+        : _allServicesLabel;
+
+    final bool alreadyCached = _salonDataService.isCached(
+      state: parsed.state.isNotEmpty ? parsed.state : null,
+      city: parsed.city.isNotEmpty ? parsed.city : null,
+      serviceName: selectedService,
+    );
+
+    if (mounted && !alreadyCached) {
       setState(() {
         _isSalonsLoading = true;
       });
     }
 
     try {
-      await _salonDataService.ensureSeeded();
-
-      final parsed = _parseCityState(_selectedLocation);
-      final selectedService = _services[_selectedServiceIndex];
       final salons = await _salonDataService.fetchSalons(
         state: parsed.state.isNotEmpty ? parsed.state : null,
         city: parsed.city.isNotEmpty ? parsed.city : null,
