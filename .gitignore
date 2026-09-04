@@ -53,11 +53,11 @@ app.*.map.json
 /android/app/release
 
 # Environment and secret files
-.env
-.env.*
 !.env.example
 functions/.env
 functions/.env.*
 !functions/.env.example
 serviceAccountKey.json
 *.json.secret
+config.bat
+node_modules
