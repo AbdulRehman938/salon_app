@@ -296,7 +296,7 @@ class AuthService {
     final savedOtp = (data['otp'] as String? ?? '').trim();
     final expiry = data['otpExpiresAt'] as Timestamp?;
     final isExpired =
-        expiry == null || expiry.toDate().isBefore(DateTime.now());
+        expiry == null || expiry.toDate().isBefore(DateTime.now().toUtc());
     if (isExpired || savedOtp != otpCode.trim()) {
       await docRef.set({
         'isVerified': false,

@@ -6,7 +6,7 @@ import '../models/country_phone_data.dart';
 
 class CountryService {
   static final Uri _endpoint = Uri.parse(
-    'https://restcountries.com/v3.1/all?fields=name,idd,cca2',
+    'https://countriesnow.space/api/v0.1/countries/codes',
   );
 
   Future<List<CountryPhoneData>> fetchCountries() async {
@@ -15,36 +15,43 @@ class CountryService {
       throw Exception('Unable to load country metadata');
     }
 
-    final List<dynamic> decoded = jsonDecode(response.body) as List<dynamic>;
+    final dynamic decodedBody = jsonDecode(response.body);
+    final List<dynamic> dataList;
+    if (decodedBody is Map<String, dynamic> &&
+        decodedBody['data'] is List<dynamic>) {
+      dataList = decodedBody['data'] as List<dynamic>;
+    } else if (decodedBody is List<dynamic>) {
+      dataList = decodedBody;
+    } else {
+      throw Exception('Invalid country metadata format');
+    }
+
     final countries = <CountryPhoneData>[];
+    final seenCodes = <String>{};
 
-    for (final item in decoded) {
-      final map = item as Map<String, dynamic>;
-      final idd = map['idd'] as Map<String, dynamic>?;
-      final root = (idd?['root'] as String?)?.trim();
-      final suffixes = (idd?['suffixes'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList();
+    for (final item in dataList) {
+      if (item is! Map<String, dynamic>) continue;
 
-      if (root == null ||
-          root.isEmpty ||
-          suffixes == null ||
-          suffixes.isEmpty) {
+      final name = (item['name'] as String?)?.trim();
+      final iso2 = (item['code'] as String? ?? '').trim().toUpperCase();
+      var dialCode =
+          (item['dial_code'] as String? ?? '').replaceAll(' ', '').trim();
+
+      if (name == null ||
+          name.isEmpty ||
+          iso2.isEmpty ||
+          dialCode.isEmpty ||
+          !seenCodes.add(iso2)) {
         continue;
       }
 
-      final dialCode = '$root${suffixes.first}'.replaceAll(' ', '');
-      final iso2 = (map['cca2'] as String? ?? '').toUpperCase();
-      final nameData = map['name'] as Map<String, dynamic>?;
-      final commonName = nameData?['common'] as String?;
-
-      if (iso2.isEmpty || commonName == null || commonName.isEmpty) {
-        continue;
+      if (!dialCode.startsWith('+')) {
+        dialCode = '+$dialCode';
       }
 
       countries.add(
         CountryPhoneData(
-          name: commonName,
+          name: name,
           iso2: iso2,
           dialCode: dialCode,
           flag: _flagEmoji(iso2),

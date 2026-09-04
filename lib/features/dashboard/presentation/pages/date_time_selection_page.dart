@@ -40,13 +40,13 @@ class _DateTimeSelectionPageState extends State<DateTimeSelectionPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _minSelectableDate = DateTime(now.year, now.month, now.day);
+    final now = DateTime.now().toUtc();
+    _minSelectableDate = DateTime.utc(now.year, now.month, now.day);
     _maxSelectableDateExclusive = _addMonths(_minSelectableDate, 2);
     _displayDates = <DateTime>[
-      DateTime(now.year, now.month, now.day),
-      DateTime(now.year, now.month, now.day + 1),
-      DateTime(now.year, now.month, now.day + 2),
+      DateTime.utc(now.year, now.month, now.day),
+      DateTime.utc(now.year, now.month, now.day + 1),
+      DateTime.utc(now.year, now.month, now.day + 2),
     ];
     _timeSlots = _buildTimeSlots(widget.openingTiming);
     _discountWindow = _parseDiscountWindow(widget.discountOffer);
@@ -178,15 +178,15 @@ class _DateTimeSelectionPageState extends State<DateTimeSelectionPage> {
     final totalMonths = (date.year * 12) + (date.month - 1) + monthDelta;
     final year = totalMonths ~/ 12;
     final month = (totalMonths % 12) + 1;
-    final lastDayOfTargetMonth = DateTime(year, month + 1, 0).day;
+    final lastDayOfTargetMonth = DateTime.utc(year, month + 1, 0).day;
     final day = date.day <= lastDayOfTargetMonth
         ? date.day
         : lastDayOfTargetMonth;
-    return DateTime(year, month, day);
+    return DateTime.utc(year, month, day);
   }
 
   bool _isWithinAllowedDateWindow(DateTime date) {
-    final normalized = DateTime(date.year, date.month, date.day);
+    final normalized = DateTime.utc(date.year, date.month, date.day);
     return !normalized.isBefore(_minSelectableDate) &&
         normalized.isBefore(_maxSelectableDateExclusive);
   }
@@ -197,9 +197,9 @@ class _DateTimeSelectionPageState extends State<DateTimeSelectionPage> {
 
   List<DateTime> _nextThreeDates(DateTime fromDate) {
     return <DateTime>[
-      DateTime(fromDate.year, fromDate.month, fromDate.day),
-      DateTime(fromDate.year, fromDate.month, fromDate.day + 1),
-      DateTime(fromDate.year, fromDate.month, fromDate.day + 2),
+      DateTime.utc(fromDate.year, fromDate.month, fromDate.day),
+      DateTime.utc(fromDate.year, fromDate.month, fromDate.day + 1),
+      DateTime.utc(fromDate.year, fromDate.month, fromDate.day + 2),
     ];
   }
 
