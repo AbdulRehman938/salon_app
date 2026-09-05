@@ -105,8 +105,9 @@ class AuthService {
       final provider = GoogleAuthProvider()
         ..addScope('email')
         ..setCustomParameters({'prompt': 'select_account'});
-      await _auth.signInWithRedirect(provider);
-      return null;
+      final userCredential = await _auth.signInWithPopup(provider);
+      await upsertUserProfile(userCredential.user, loginMethod: 'google');
+      return userCredential;
     }
 
     final googleSignIn = _googleSignIn;
